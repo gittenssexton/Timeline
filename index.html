@@ -205,10 +205,11 @@ fetch('assets/indus_pixel_atlas.b64').then(r=>{
  artAtlas.src='data:image/png;base64,'+b64.trim();
 }).catch(err=>{artFailed=true;console.warn('Pixel artwork unavailable:',err);});
 function layer(index,rate,y,width,height,opacity=1){
- const offset=((p*rate%width)+width)%width;
+ const period=width*2;
+ const offset=((p*rate%period)+period)%period;
  ctx.save();
  ctx.globalAlpha=opacity;
- for(let i=-1;i<=3;i++){
+ for(let i=-2;i<=5;i++){
   const x=Math.round(i*width-offset);
   if(x>320||x+width<0)continue;
   // Mirrored repeat has matching edge pixels: no abrupt jumps at the seams.
