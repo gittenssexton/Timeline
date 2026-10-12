@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Timeline — First Walk</title><style>
 *{box-sizing:border-box}body{margin:0;background:#1b1d24;color:#fff2d2;font:16px system-ui;display:flex;align-items:center;flex-direction:column;gap:9px;padding:10px 7px 24px}h1{font-size:clamp(18px,4vw,24px);margin:4px}canvas{width:min(96vw,960px);height:auto;image-rendering:pixelated;border:3px solid #8b806c;touch-action:none}.hud,.status,.panel{width:min(96vw,960px);background:#30343b;border:2px solid #b8a582;border-radius:8px;padding:10px 13px}.hud{display:flex;justify-content:space-between;font-weight:750;font-size:clamp(18px,4vw,23px)}.status{font-size:clamp(16px,3.8vw,19px);line-height:1.5;min-height:55px}.panel{font-size:18px;line-height:1.5}.panel[hidden]{display:none}.panel h2{margin:0 0 8px;font-size:21px}.controls{width:min(96vw,960px);display:grid;grid-template-columns:repeat(4,1fr);gap:6px}button{touch-action:none;background:#554d40;color:white;border:1px solid #b8a582;border-radius:8px;min-height:54px;font:700 clamp(14px,3.3vw,18px) system-ui;cursor:pointer}.controls button[data-key=use]{grid-column:span 2}button.held,button:active{background:#a58b5d;color:#17120c}.instructions{font-size:13px;text-align:center;margin:0;max-width:900px;line-height:1.4}@media(min-width:750px){.controls{grid-template-columns:repeat(7,1fr)}.controls button[data-key=use]{grid-column:auto}}@media(max-height:500px) and (orientation:landscape){body{gap:4px;padding:4px}canvas{width:min(74vw,calc((100vh - 65px)*16/9))}.hud,.status,.controls,.panel{width:min(74vw,900px)}.controls{grid-template-columns:repeat(7,1fr)}.controls button{min-height:38px}.instructions{display:none}}
-</style></head><body><h1>TIMELINE — Changing Indus Valley</h1><div class="hud"><span id="date">2200 BCE</span><span>South Asia</span></div><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas><p class="instructions">A/D or ◀/▶: travel · Space/X: jump · S/Q: speak · ↓: inspect · E: inventory · J: journal · M: atlas · Esc: close</p><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button data-key="escape">Close</button></section><div class="controls"><button data-key="left">◀ Past</button><button data-key="right">Future ▶</button><button data-key="up">Jump</button><button data-key="down">Inspect</button><button data-key="use">Talk / Use</button><button data-key="map">Atlas</button><button data-key="inventory">Bag</button></div><div class="status" id="status" role="status">Begin beside a Harappan river city. Travel right through time; press S to speak.</div><script>
+</style></head><body><h1>TIMELINE — Scrolling Indus Valley</h1><div class="hud"><span id="date">2200 BCE</span><span>South Asia · Scenery loop ↻</span></div><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas><p class="instructions">A/D or ◀/▶: travel · Space/X: jump · S/Q: speak · ↓: inspect · E: inventory · J: journal · M: atlas · Esc: close</p><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button data-key="escape">Close</button></section><div class="controls"><button data-key="left">◀ Past</button><button data-key="right">Future ▶</button><button data-key="up">Jump</button><button data-key="down">Inspect</button><button data-key="use">Talk / Use</button><button data-key="map">Atlas</button><button data-key="inventory">Bag</button></div><div class="status" id="status" role="status">Scrolling artwork preview: travel through the valley. The scene repeats when you reach either end.</div><script>
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
 const dateEl=document.getElementById('date'),statusEl=document.getElementById('status'),panelEl=document.getElementById('panel'),titleEl=document.getElementById('panelTitle'),bodyEl=document.getElementById('panelBody');
 let p=-1790,vy=0,jump=0,screen='world',held={},known=new Set(),items=new Set(),journal=[],sceneText='',active=null;
@@ -133,64 +133,85 @@ function horse(x){
  block(x+22,113,5,18,'#6e5448');block(x+21,107,7,7,'#b28d70');
  block(x+22,106,7,3,'#524238');
 }
+
+const art={};
+for(const name of ['traveler','cloud','wisps','mountains','valley','city','forest','reeds','ruins']){
+ const img=new Image();
+ img.src='assets/'+name+'.png';
+ art[name]=img;
+}
+let sceneryClock=0;
+function drawAsset(name,x,y,w,h,alpha=1){
+ const im=art[name];
+ if(!im?.complete||!im.naturalWidth)return;
+ ctx.save();ctx.globalAlpha=alpha;ctx.imageSmoothingEnabled=false;
+ ctx.drawImage(im,Math.round(x),Math.round(y),Math.round(w),Math.round(h));
+ ctx.restore();
+}
+// A repeating layer is scenery only. It does not control historic event positions.
+function tileAsset(name,scroll,width,y,height,alpha=1){
+ let x=-(((scroll%width)+width)%width);
+ for(;x<320;x+=width)drawAsset(name,x,y,width,height,alpha);
+}
+function drawClouds(){
+ // Each cloud moves on its own track with a different drift and parallax factor.
+ const settings=[
+  {x:45,y:8,w:83,s:.055,drift:1.8},
+  {x:218,y:35,w:115,s:.024,drift:.8},
+  {x:370,y:15,w:73,s:.042,drift:1.2},
+  {x:530,y:46,w:97,s:.016,drift:.4}
+ ];
+ const travel=p-min;
+ for(const c of settings){
+  const total=320+c.w+80;
+  const x=(((c.x-travel*c.s+sceneryClock*c.drift)%total)+total)%total-c.w-40;
+  drawAsset('cloud',x,c.y,c.w,Math.round(c.w/3));
+ }
+ const wisps=art.wisps;
+ if(wisps?.complete&&wisps.naturalWidth){
+  ctx.save();ctx.imageSmoothingEnabled=false;ctx.globalAlpha=.55;
+  const wx=(((390-(p-min)*.011+sceneryClock*.3)%600)+600)%600-230;
+  ctx.drawImage(wisps,0,0,240,64,Math.round(wx),27,150,34);
+  ctx.restore();
+ }
+ // Small independent bird silhouettes, subtle animation and no hit boxes.
+ const birdsX=(((390-(p-min)*.021+sceneryClock*2.6)%480)+480)%480-75;
+ for(let i=0;i<4;i++){
+  const x=Math.round(birdsX+i*11),y=21+i%2*4+Math.round(Math.sin(sceneryClock*.12+i)*2);
+  block(x,y,2,1,'#455866');block(x+3,y+1,2,1,'#455866');
+ }
+}
 function drawLandscape(){
- const yr=currentYear(),late=yr<1350;
- // Sky, sun and block-shaped clouds: deliberately richer but still pixel-art.
- block(0,0,320,83,'#9bbfc3');block(0,0,320,38,'#aed0ce');
- block(0,40,320,38,'#c2d1bf');
- block(253,27,17,16,'#eed4a0');block(257,24,9,24,'#eed4a0');
- for(let i=0;i<7;i++){
-  let x=((i*87-p*.007)%530+530)%530-80, y=15+(i%3)*12;
-  block(x,y,39,5,'#dbe4d6');block(x+8,y-3,23,4,'#edf0df');
+ const travel=p-min;
+ // Sky stays behind all separate alpha PNG assets.
+ block(0,0,320,180,'#b5d2cb');
+ block(0,0,320,39,'#9dc7ce');
+ block(0,39,320,44,'#c4d6c3');
+ block(258,27,14,14,'#f4d39a');
+ drawClouds();
+ // Far layers move slowly. Near layers travel faster.
+ tileAsset('mountains',travel*.028,560,47,121,.88);
+ tileAsset('valley',travel*.065,535,65,128,1);
+ tileAsset('forest',travel*.12+110,480,85,147,.90);
+ // Prominent settlements move as discrete landmarks, not repeating every few steps.
+ // Each pass through the demo timeline repeats these at their original coordinates.
+ const urbanX=150+(-1370-p)*.18;
+ if(urbanX>-350&&urbanX<690)drawAsset('city',urbanX-185,61,415,98,1);
+ const ruinX=150+(1130-p)*.18;
+ if(ruinX>-350&&ruinX<690)drawAsset('ruins',ruinX-185,72,407,92,1);
+ // Continuous surface of the road. The world scrolls, the sprite remains centered.
+ block(0,141,320,39,'#8b7052');
+ block(0,141,320,3,'#c0a37b');
+ block(0,144,320,3,'#a68760');
+ for(let k=0;k<12;k++){
+  let x=((k*43-travel*.51)%420+420)%420-40;
+  block(x,150+(k%3)*8,6,2,'#a48866');
+  block(x+12,163+(k%2)*5,3,2,'#6d644e');
  }
- // Distant ridge is slower than the middle and foreground planes.
- for(let x=0;x<320;x+=5){
-  const y=Math.floor(74+7*Math.sin((x+p*.010)*.028)+3*Math.sin((x+p*.010)*.072));
-  block(x,y,5,123-y,'#819f9c');
- }
- for(let x=0;x<320;x+=6){
-  const y=Math.floor(93+7*Math.sin((x+p*.019)*.026)+3*Math.sin((x+p*.019)*.061));
-  block(x,y,6,129-y,late?'#a2a686':'#94a48d');
- }
- // Winding blue river, ripples, low sandy banks and scattered reeds.
- for(let x=0;x<320;x+=4){
-  const y=Math.floor(109+3*Math.sin((x+p*.026)*.035));
-  block(x,y-2,4,2,'#829984');block(x,y,4,11,'#518f9d');
-  block(x,y+9,4,2,'#82b6b1');
-  if(Math.abs((x+Math.round(p*.025))%39)<4)block(x,y+4,4,1,'#bad9c7');
- }
- // Older urban city is a fixed landmark in time, not a repeating tile.
- const cx=sceneryX(-1450,.15);
- if(cx>-115&&cx<405)city(cx);
- // Cultivation persists before and after the urban transformation.
- for(const at of [-700,300,1450,2650,3880,5800]){
-  const x=sceneryX(at,.16);if(x>-100&&x<340)fields(x,late?59:82);
- }
- block(0,131,320,14,'#b9a17b');block(0,145,320,35,'#78664e');
- block(0,132,320,2,'#d1b890');block(0,143,320,3,'#97815e');
- // Pebbles and plant details remain at coherent world positions.
- for(let at=-2200;at<7900;at+=71){
-  const x=sceneryX(at);
-  if(x<0||x>320)continue;
-  block(x,139+(at%3),5,1,'#8a7956');
-  block(x+6,154+((at%5)+5)%5,3,2,'#957d5e');
-  if(at%4===0){block(x+2,127,2,7,'#73804f');block(x,129,5,2,'#9aa467')}
- }
- for(const at of [-1850,-350,850,1920,2990,4190,5550,6920]){
-  const x=sceneryX(at,.18);if(x>-25&&x<340)tree(x);
- }
- for(const at of [2650,4930,6310]){
-  const x=sceneryX(at,.15);if(x>-45&&x<360)village(x);
- }
- if(yr<1550){
-  const x=sceneryX(4520,.16);if(x>-45&&x<340)horse(x);
- }
- // Reeds overpaint the low foreground and reinforce parallax depth.
- for(const at of [-1710,-620,410,1710,3240,5020,6720]){
-  const x=sceneryX(at,.25);if(x<0||x>320)continue;
-  block(x,155,2,18,'#566a51');block(x-4,153,5,3,'#839869');
-  block(x+1,149,5,3,'#9baa73');block(x+5,157,2,13,'#607959');
- }
+}
+// Draw low plants after the player, without covering the player's face.
+function drawForeground(){
+ tileAsset('reeds',(p-min)*.3+175,450,135,83,.66);
 }
 
 function draw(){
@@ -213,7 +234,19 @@ function draw(){
  }
  }
  // Player sprite
- const x=150;block(x-5,127+jump,5,15,'#45495a');block(x+3,127+jump,5,15,'#45495a');block(x-6,113+jump,16,17,'#45617d');block(x-3,104+jump,11,10,'#c99976');block(x-4,102+jump,13,4,'#40332e');block(x+10,118+jump,5,8,'#89634b');
+ const x=150;
+ const traveler=art.traveler;
+ if(traveler?.complete&&traveler.naturalWidth){
+  ctx.save();ctx.imageSmoothingEnabled=false;
+  if(held.left&&!held.right){ctx.translate(300,0);ctx.scale(-1,1)}
+  const walking=(held.left||held.right)&&screen==='world'&&jump===0;
+  const bob=walking?Math.sin(sceneryClock*.36)*1.5:0;
+  ctx.drawImage(traveler,138,96+jump+bob,24,53);
+  ctx.restore();
+ }else{
+  block(144,108+jump,14,29,'#76583e');block(146,100+jump,10,10,'#b18a67');
+ }
+ drawForeground();
  // On-canvas 8-bit text window like a classic adventure game.
  if(screen==='encounter'){
   block(5,76,310,99,'#262c34');block(8,79,304,93,'#444d57');
@@ -236,7 +269,16 @@ function draw(){
 
 }
 let previous=0;function frame(now){let dt=Math.min(2,(now-previous)/16.67||1);previous=now;
- if(screen==='world'){if(held.left)p=Math.max(min,p-speed*dt);if(held.right)p=Math.min(length,p+speed*dt);if(held.up&&jump===0)vy=-4.1;jump+=vy*dt;vy+=.34*dt;if(jump>0){jump=0;vy=0}}
+ sceneryClock+=dt;
+ if(screen==='world'){
+  if(held.left)p-=speed*dt;
+  if(held.right)p+=speed*dt;
+  if(p>length){p=min+(p-length);message('Demo loop: returning to the earlier Harappan landscape.')}
+  if(p<min){p=length-(min-p);message('Demo loop: returning to the later landscape.')}
+  if(held.up&&jump===0)vy=-4.1;
+  jump+=vy*dt;vy+=.34*dt;
+  if(jump>0){jump=0;vy=0}
+ }
  renderPanel();draw();requestAnimationFrame(frame)
 }
 requestAnimationFrame(frame);
