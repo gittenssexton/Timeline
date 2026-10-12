@@ -16,14 +16,14 @@ const events=[
  {id:'settlement',at:6490,type:'site',name:'Growing settlement',start:1300,end:700,description:'Homes, fields and paths continue to change. No single event explains everything.',gain:'continuity'}
 ];
 const activeEvents=()=>events.filter(e=>currentYear()<=e.start && currentYear()>=e.end);
-const range=e=>Math.abs(e.at-p)<=58;
+const range=e=>Math.abs(e.at-p)<=85; // sprite overlap plus a small native-pixel tolerance
 function message(t){statusEl.textContent=t}
 function record(t){if(!journal.includes(t))journal.push(t)}
 function open(type,text){screen=type;sceneText=text;held.left=held.right=held.up=false;renderPanel()}
 function interact(examine=false){
- const nearby=activeEvents().filter(range).sort((a,b)=>Math.abs(a.at-p)-Math.abs(b.at-p))[0];
- if(!nearby){message('Move closer to a person or object to interact.');return}
- if(examine&&nearby.type==='person'){message('Press S or Q to speak.');return}
+ const nearby=activeEvents().filter(e=>range(e)&&(examine?e.type==='site':e.type==='person')).sort((a,b)=>Math.abs(a.at-p)-Math.abs(b.at-p))[0];
+ if(!nearby){message(examine?'Move over an object and press Down to inspect.':'Stand beside a person and press S or Q to speak.');return}
+ 
  if(nearby.needs&&!known.has(nearby.needs)){
  open('encounter','You notice something unusual here, but lack the knowledge to recognize its significance. Return after learning more.');return;
  }
@@ -47,7 +47,7 @@ function input(k,on){
  if(k==='escape'){screen='world';held={};renderPanel();return}
  if(k==='inventory'||k==='map'||k==='journal'){screen=screen===k?'world':k;held={};renderPanel();return}
  if(screen!=='world')return;
- if(k==='use'){interact();return}
+ if(k==='use'){interact(false);return}
  if(k==='down'){interact(true);return}
  held[k]=true;
 }
