@@ -1,11 +1,12 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Timeline — First Walk</title><style>
 *{box-sizing:border-box}body{margin:0;background:#1b1d24;color:#fff2d2;font:16px system-ui;display:flex;align-items:center;flex-direction:column;gap:9px;padding:10px 7px 24px}h1{font-size:clamp(18px,4vw,24px);margin:4px}canvas{width:min(96vw,960px);height:auto;image-rendering:pixelated;border:3px solid #8b806c;touch-action:none}.hud,.status,.panel{width:min(96vw,960px);background:#30343b;border:2px solid #b8a582;border-radius:8px;padding:10px 13px}.hud{display:flex;justify-content:space-between;font-weight:750;font-size:clamp(18px,4vw,23px)}.status{font-size:clamp(16px,3.8vw,19px);line-height:1.5;min-height:55px}.panel{font-size:18px;line-height:1.5}.panel[hidden]{display:none}.panel h2{margin:0 0 8px;font-size:21px}.controls{width:min(96vw,960px);display:grid;grid-template-columns:repeat(4,1fr);gap:6px}button{touch-action:none;background:#554d40;color:white;border:1px solid #b8a582;border-radius:8px;min-height:54px;font:700 clamp(14px,3.3vw,18px) system-ui;cursor:pointer}.controls button[data-key=use]{grid-column:span 2}button.held,button:active{background:#a58b5d;color:#17120c}.instructions{font-size:13px;text-align:center;margin:0;max-width:900px;line-height:1.4}@media(min-width:750px){.controls{grid-template-columns:repeat(7,1fr)}.controls button[data-key=use]{grid-column:auto}}@media(max-height:500px) and (orientation:landscape){body{gap:4px;padding:4px}canvas{width:min(74vw,calc((100vh - 65px)*16/9))}.hud,.status,.controls,.panel{width:min(74vw,900px)}.controls{grid-template-columns:repeat(7,1fr)}.controls button{min-height:38px}.instructions{display:none}}
-</style></head><body><h1>TIMELINE — Changing Indus Valley</h1><div class="hud"><span id="date">1900 BCE</span><span>South Asia</span></div><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas><p class="instructions">A/D or ◀/▶: travel · Space/X: jump · S/Q: speak · ↓: inspect · E: inventory · J: journal · M: atlas · Esc: close</p><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button data-key="escape">Close</button></section><div class="controls"><button data-key="left">◀ Past</button><button data-key="right">Future ▶</button><button data-key="up">Jump</button><button data-key="down">Inspect</button><button data-key="use">Talk / Use</button><button data-key="map">Atlas</button><button data-key="inventory">Bag</button></div><div class="status" id="status" role="status">Travel through the changing Indus region. Approach the brick mound and press ↓ to inspect.</div><script>
+</style></head><body><h1>TIMELINE — Changing Indus Valley</h1><div class="hud"><span id="date">2200 BCE</span><span>South Asia</span></div><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas><p class="instructions">A/D or ◀/▶: travel · Space/X: jump · S/Q: speak · ↓: inspect · E: inventory · J: journal · M: atlas · Esc: close</p><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button data-key="escape">Close</button></section><div class="controls"><button data-key="left">◀ Past</button><button data-key="right">Future ▶</button><button data-key="up">Jump</button><button data-key="down">Inspect</button><button data-key="use">Talk / Use</button><button data-key="map">Atlas</button><button data-key="inventory">Bag</button></div><div class="status" id="status" role="status">Begin beside a Harappan river city. Travel right through time; press S to speak.</div><script>
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
 const dateEl=document.getElementById('date'),statusEl=document.getElementById('status'),panelEl=document.getElementById('panel'),titleEl=document.getElementById('panelTitle'),bodyEl=document.getElementById('panelBody');
-let p=16,vy=0,jump=0,screen='world',held={},known=new Set(),items=new Set(),journal=[],sceneText='',active=null;
-const length=7200,speed=2.4;const currentYear=()=>Math.round(1900-(p/length)*1200);
+let p=-1790,vy=0,jump=0,screen='world',held={},known=new Set(),items=new Set(),journal=[],sceneText='',active=null;
+const length=7200,min=-1800,speed=2.4;const currentYear=()=>Math.round(1900-(p/length)*1200);
 const events=[
+ {id:'craft',at:-1150,type:'person',name:'Harappan craft worker',start:2300,end:1800,description:'“Our well and brick drains need constant care. Beads and other goods travel to distant places.”',gain:'urban-life'},
  {id:'mound',at:290,type:'site',name:'Old brickwork',start:1900,end:700,description:'A mound of older bricks lies beside the road.',gain:'brickwork'},
  {id:'pottery',at:720,type:'site',name:'Pottery fragments',start:1900,end:700,description:'Shards are scattered in the soil.',needs:'brickwork',gain:'pottery'},
  {id:'farmer',at:1250,type:'person',name:'Village farmer',start:1900,end:1100,description:'“Some families remain. Our fields and wells matter more than the distant empty streets.”',gain:'villages'},
@@ -31,13 +32,13 @@ function interact(examine=false){
  }
  if(nearby.type==='site'&&nearby.id==='pottery')items.add('Pottery fragment');
  known.add(nearby.gain);record(currentYear()+' BCE — '+nearby.name+': '+nearby.description);
- open('encounter',nearby.description+'\n\nNew knowledge: '+nearby.name+(nearby.id==='pottery'?'\nObject collected: Pottery fragment':''));
+ open('encounter',nearby.name+'\n'+nearby.description+'\n\nNew knowledge: '+nearby.name+(nearby.id==='pottery'?'\nObject collected: Pottery fragment':''));
 }
 function renderPanel(){
  dateEl.textContent=currentYear()+' BCE';panelEl.hidden=screen==='world'||screen==='encounter';if(screen==='world'||screen==='encounter')return;
  const pages={
   inventory:'Objects: '+([...items].join(', ')||'none')+'\n\nKnowledge: '+([...known].join(', ')||'none')+'\n\nPrivileges: none yet.',
-  atlas:'South Asia, '+currentYear()+' BCE\n\nChapter: changes in post-Harappan communities, c. 1900–700 BCE.\n\nDiscovered sites: '+known.size+' / '+events.length,
+  atlas:'South Asia, '+currentYear()+' BCE\n\nChapter: changes in post-Harappan communities, c. 2200–700 BCE.\n\nDiscovered sites: '+known.size+' / '+events.length,
   journal:journal.length?journal.join('\n\n'):'No discoveries recorded yet.',
   encounter:sceneText
  };
@@ -82,16 +83,118 @@ addEventListener('blur',()=>{held={};downKeys.clear()});document.addEventListene
 function block(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
 const promptAlpha=new Map();
 function person(x,color){block(x-5,106,10,10,'#be9373');block(x-4,103,9,4,'#49372d');block(x-6,116,12,19,color);block(x-5,135,4,8,'#514039');block(x+2,135,4,8,'#514039')}
+
+const sceneryX=(at,depth=.2)=>Math.round(150+(at-p)*depth);
+function bricks(x,y,w,h,color){
+ block(x,y,w,h,color);
+ for(let row=5;row<h;row+=5){
+  block(x,y+row,w,1,'#85654d');
+  for(let col=(row%10?6:0);col<w;col+=12)block(x+col,y+row-4,1,4,'#98735b');
+ }
+}
+function city(x){
+ // Flat-roofed baked-brick streets, a well and a water drain. No fantasy palace.
+ block(x-92,119,186,7,'#775e4c');block(x-88,115,176,5,'#bc9b74');
+ bricks(x-80,88,38,28,'#ba926c');bricks(x-43,78,45,38,'#c49d76');
+ bricks(x+4,92,39,25,'#ac8062');bricks(x+46,84,40,33,'#b98d69');
+ block(x-84,85,46,4,'#e0ba94');block(x-46,75,51,4,'#d9b490');
+ block(x+42,81,48,4,'#d1a881');block(x-32,97,8,19,'#53453a');
+ block(x+55,100,9,17,'#544439');
+ for(const w of [x-73,x-59,x-11,x+17])block(w,99,4,6,'#654e41');
+ block(x+91,111,20,6,'#96735c');block(x+94,108,14,5,'#dbb58e');
+ block(x+97,109,8,2,'#527c86');
+ block(x-63,122,116,2,'#625f50');block(x-63,123,116,1,'#61898e');
+}
+function fields(x,w){
+ if(x+w<0||x>320)return;
+ block(x,114,w,17,'#a98b56');block(x,114,w,2,'#756343');
+ for(let row=0;row<5;row++){
+  const yy=119+row*3;block(x+3,yy,w-6,1,row%2?'#717c43':'#caab68');
+  for(let i=7;i<w-3;i+=9){block(x+i,yy-3,1,4,'#6b854b');block(x+i-1,yy-2,3,1,'#dbbc75')}
+ }
+ block(x,114,2,18,'#796142');block(x+w-2,114,2,18,'#796142');
+}
+function tree(x){
+ block(x-2,110,5,31,'#684f3b');block(x+1,114,2,14,'#ac8353');
+ block(x-13,103,28,15,'#546f50');block(x-10,94,22,20,'#6d855b');
+ block(x-5,90,15,15,'#8e9a68');block(x+8,109,6,3,'#9aaa6d');
+}
+function village(x){
+ block(x-34,121,69,5,'#827155');block(x-27,106,27,19,'#a98b6a');
+ block(x-29,103,31,4,'#75614e');block(x-21,115,8,10,'#604a39');
+ block(x+8,110,23,15,'#ac8b66');block(x+6,107,27,4,'#c2a37a');
+ block(x+15,115,7,10,'#624b3b');
+}
+function horse(x){
+ // Later pastoral encounter, distant and peaceful, not a conquest scene.
+ block(x-14,117,22,7,'#8a6752');block(x+6,111,5,12,'#8f6b53');
+ block(x+8,107,6,5,'#6d543e');block(x-12,123,3,11,'#614936');
+ block(x+3,122,3,11,'#604735');block(x-17,115,4,8,'#5b4538');
+ block(x+22,113,5,18,'#6e5448');block(x+21,107,7,7,'#b28d70');
+ block(x+22,106,7,3,'#524238');
+}
+function drawLandscape(){
+ const yr=currentYear(),late=yr<1350;
+ // Sky, sun and block-shaped clouds: deliberately richer but still pixel-art.
+ block(0,0,320,83,'#9bbfc3');block(0,0,320,38,'#aed0ce');
+ block(0,40,320,38,'#c2d1bf');
+ block(253,27,17,16,'#eed4a0');block(257,24,9,24,'#eed4a0');
+ for(let i=0;i<7;i++){
+  let x=((i*87-p*.007)%530+530)%530-80, y=15+(i%3)*12;
+  block(x,y,39,5,'#dbe4d6');block(x+8,y-3,23,4,'#edf0df');
+ }
+ // Distant ridge is slower than the middle and foreground planes.
+ for(let x=0;x<320;x+=5){
+  const y=Math.floor(74+7*Math.sin((x+p*.010)*.028)+3*Math.sin((x+p*.010)*.072));
+  block(x,y,5,123-y,'#819f9c');
+ }
+ for(let x=0;x<320;x+=6){
+  const y=Math.floor(93+7*Math.sin((x+p*.019)*.026)+3*Math.sin((x+p*.019)*.061));
+  block(x,y,6,129-y,late?'#a2a686':'#94a48d');
+ }
+ // Winding blue river, ripples, low sandy banks and scattered reeds.
+ for(let x=0;x<320;x+=4){
+  const y=Math.floor(109+3*Math.sin((x+p*.026)*.035));
+  block(x,y-2,4,2,'#829984');block(x,y,4,11,'#518f9d');
+  block(x,y+9,4,2,'#82b6b1');
+  if(Math.abs((x+Math.round(p*.025))%39)<4)block(x,y+4,4,1,'#bad9c7');
+ }
+ // Older urban city is a fixed landmark in time, not a repeating tile.
+ const cx=sceneryX(-1450,.15);
+ if(cx>-115&&cx<405)city(cx);
+ // Cultivation persists before and after the urban transformation.
+ for(const at of [-700,300,1450,2650,3880,5800]){
+  const x=sceneryX(at,.16);if(x>-100&&x<340)fields(x,late?59:82);
+ }
+ block(0,131,320,14,'#b9a17b');block(0,145,320,35,'#78664e');
+ block(0,132,320,2,'#d1b890');block(0,143,320,3,'#97815e');
+ // Pebbles and plant details remain at coherent world positions.
+ for(let at=-2200;at<7900;at+=71){
+  const x=sceneryX(at);
+  if(x<0||x>320)continue;
+  block(x,139+(at%3),5,1,'#8a7956');
+  block(x+6,154+((at%5)+5)%5,3,2,'#957d5e');
+  if(at%4===0){block(x+2,127,2,7,'#73804f');block(x,129,5,2,'#9aa467')}
+ }
+ for(const at of [-1850,-350,850,1920,2990,4190,5550,6920]){
+  const x=sceneryX(at,.18);if(x>-25&&x<340)tree(x);
+ }
+ for(const at of [2650,4930,6310]){
+  const x=sceneryX(at,.15);if(x>-45&&x<360)village(x);
+ }
+ if(yr<1550){
+  const x=sceneryX(4520,.16);if(x>-45&&x<340)horse(x);
+ }
+ // Reeds overpaint the low foreground and reinforce parallax depth.
+ for(const at of [-1710,-620,410,1710,3240,5020,6720]){
+  const x=sceneryX(at,.25);if(x<0||x>320)continue;
+  block(x,155,2,18,'#566a51');block(x-4,153,5,3,'#839869');
+  block(x+1,149,5,3,'#9baa73');block(x+5,157,2,13,'#607959');
+ }
+}
+
 function draw(){
- block(0,0,320,180,'#c2dad2');block(0,78,320,51,'#9db3a3');
- // Slow parallax hills and distant skyline
- for(let i=-1;i<7;i++){let x=((i*93-p*.008)%560+560)%560-95;block(x,85+(i%2)*6,95,38,'#94ab9e')}
- block(0,125,320,22,'#bea885');block(0,147,320,33,'#7b674f');
- for(let i=0;i<24;i++){let x=((i*37-p*.08)%360+360)%360;block(x,143+i%3,7,2,'#967d5b')}
- // The ruins slowly flatten while new small dwellings appear later.
- let phase=currentYear()>1600?0:currentYear()>1200?1:2;
- for(let i=0;i<4;i++){let x=45+i*86-p*.026; if(x<-80||x>340)continue;block(x,110+phase*4,40,31-phase*4,phase===2?'#947e69':'#b28c6a');block(x-3,107+phase*4,46,5,'#846e5b');if(phase===2)block(x+6,110,11,6,'#7c8c73');else block(x+13,124,9,17,'#574435')}
- for(let i=0;i<5;i++){let x=((i*128+93-p*.048)%700+700)%700-80;block(x,103,5,39,'#715b43');block(x-11,85,29,22,'#728e64');block(x-6,77,20,20,'#829b6a')}
+ drawLandscape();
  for(const e of activeEvents()){
  let x=eventScreenX(e);if(x<-30||x>350)continue;
  if(e.type==='person')person(x,e.id==='traveler'?'#82647a':e.id==='herder'?'#6f7556':'#976b4b');
@@ -109,25 +212,31 @@ function draw(){
  ctx.restore();
  }
  }
- if(screen==='encounter'){
-   // Draw text at the native game resolution: crisp 8-bit lettering and consistent wrapping.
-   block(7,79,306,96,'#262c34');block(10,82,300,90,'#f0e3c3');
-   ctx.fillStyle='#25272a';ctx.font='bold 9px monospace';ctx.textAlign='left';
-   const lines=[];let line='';
-   for(const word of sceneText.replace(/\n/g,' \n ').split(/\s+/)){
-     if(word==='\\n'){lines.push(line);line='';continue}
-     const next=line?line+' '+word:word;
-     if(ctx.measureText(next).width>282 && line){lines.push(line);line=word}else line=next;
-   }
-   if(line)lines.push(line);
-   lines.slice(0,7).forEach((txt,i)=>ctx.fillText(txt,17,95+i*10));
-   ctx.fillStyle='#5d4b35';ctx.font='8px monospace';ctx.fillText('S / Q / Esc: continue',17,165);
- }
  // Player sprite
  const x=150;block(x-5,127+jump,5,15,'#45495a');block(x+3,127+jump,5,15,'#45495a');block(x-6,113+jump,16,17,'#45617d');block(x-3,104+jump,11,10,'#c99976');block(x-4,102+jump,13,4,'#40332e');block(x+10,118+jump,5,8,'#89634b');
+ // On-canvas 8-bit text window like a classic adventure game.
+ if(screen==='encounter'){
+  block(5,76,310,99,'#262c34');block(8,79,304,93,'#444d57');
+  block(10,80,300,2,'#9ca7a0');block(10,169,300,2,'#242a32');
+  ctx.fillStyle='#f8ebbf';ctx.font='bold 9px monospace';ctx.textAlign='left';
+  const lines=[];
+  for(const paragraph of sceneText.split('\n')){
+   if(!paragraph.trim()){lines.push('');continue}
+   let line='';
+   for(const word of paragraph.split(/\s+/)){
+    const next=line?line+' '+word:word;
+    if(line&&ctx.measureText(next).width>282){lines.push(line);line=word}else line=next;
+   }
+   if(line)lines.push(line);
+  }
+  lines.slice(0,7).forEach((line,i)=>ctx.fillText(line,15,94+i*10));
+  ctx.fillStyle='#dbd1aa';ctx.font='8px monospace';
+  ctx.fillText('S / Q / Esc : continue',15,165);
+ }
+
 }
 let previous=0;function frame(now){let dt=Math.min(2,(now-previous)/16.67||1);previous=now;
- if(screen==='world'){if(held.left)p=Math.max(0,p-speed*dt);if(held.right)p=Math.min(length,p+speed*dt);if(held.up&&jump===0)vy=-4.1;jump+=vy*dt;vy+=.34*dt;if(jump>0){jump=0;vy=0}}
+ if(screen==='world'){if(held.left)p=Math.max(min,p-speed*dt);if(held.right)p=Math.min(length,p+speed*dt);if(held.up&&jump===0)vy=-4.1;jump+=vy*dt;vy+=.34*dt;if(jump>0){jump=0;vy=0}}
  renderPanel();draw();requestAnimationFrame(frame)
 }
 requestAnimationFrame(frame);
