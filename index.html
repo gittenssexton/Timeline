@@ -1,6 +1,6 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Timeline — First Walk</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Timeline — Pixel Scrolling Adventure</title><style>
 *{box-sizing:border-box}body{margin:0;background:#1b1d24;color:#fff2d2;font:16px system-ui;display:flex;align-items:center;flex-direction:column;gap:9px;padding:10px 7px 24px}h1{font-size:clamp(18px,4vw,24px);margin:4px}canvas{width:min(96vw,960px);height:auto;image-rendering:pixelated;border:3px solid #8b806c;touch-action:none}.hud,.status,.panel{width:min(96vw,960px);background:#30343b;border:2px solid #b8a582;border-radius:8px;padding:10px 13px}.hud{display:flex;justify-content:space-between;font-weight:750;font-size:clamp(18px,4vw,23px)}.status{font-size:clamp(16px,3.8vw,19px);line-height:1.5;min-height:55px}.panel{font-size:18px;line-height:1.5}.panel[hidden]{display:none}.panel h2{margin:0 0 8px;font-size:21px}.controls{width:min(96vw,960px);display:grid;grid-template-columns:repeat(4,1fr);gap:6px}button{touch-action:none;background:#554d40;color:white;border:1px solid #b8a582;border-radius:8px;min-height:54px;font:700 clamp(14px,3.3vw,18px) system-ui;cursor:pointer}.controls button[data-key=use]{grid-column:span 2}button.held,button:active{background:#a58b5d;color:#17120c}.instructions{font-size:13px;text-align:center;margin:0;max-width:900px;line-height:1.4}@media(min-width:750px){.controls{grid-template-columns:repeat(7,1fr)}.controls button[data-key=use]{grid-column:auto}}@media(max-height:500px) and (orientation:landscape){body{gap:4px;padding:4px}canvas{width:min(74vw,calc((100vh - 65px)*16/9))}.hud,.status,.controls,.panel{width:min(74vw,900px)}.controls{grid-template-columns:repeat(7,1fr)}.controls button{min-height:38px}.instructions{display:none}}
-</style></head><body><h1>TIMELINE — Changing Indus Valley</h1><div class="hud"><span id="date">2200 BCE</span><span>South Asia</span></div><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas><p class="instructions">A/D or ◀/▶: travel · Space/X: jump · S/Q: speak · ↓: inspect · E: inventory · J: journal · M: atlas · Esc: close</p><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button data-key="escape">Close</button></section><div class="controls"><button data-key="left">◀ Past</button><button data-key="right">Future ▶</button><button data-key="up">Jump</button><button data-key="down">Inspect</button><button data-key="use">Talk / Use</button><button data-key="map">Atlas</button><button data-key="inventory">Bag</button></div><div class="status" id="status" role="status">Begin beside a Harappan river city. Travel right through time; press S to speak.</div><script>
+</style></head><body><h1>TIMELINE — The Scrolling Adventure</h1><div class="hud"><span id="date">2200 BCE</span><span>South Asia</span></div><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas><p class="instructions">A/D or ◀/▶: travel · Space/X: jump · S/Q: speak · ↓: inspect · E: bag · M: atlas · Background loops</p><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button data-key="escape">Close</button></section><div class="controls"><button data-key="left">◀ Past</button><button data-key="right">Future ▶</button><button data-key="up">Jump</button><button data-key="down">Inspect</button><button data-key="use">Talk / Use</button><button data-key="map">Atlas</button><button data-key="inventory">Bag</button></div><div class="status" id="status" role="status">Pixel-art landscape preview: scroll through the Indus valley. The background and journey repeat for now.</div><script>
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
 const dateEl=document.getElementById('date'),statusEl=document.getElementById('status'),panelEl=document.getElementById('panel'),titleEl=document.getElementById('panelTitle'),bodyEl=document.getElementById('panelBody');
 let p=-1790,vy=0,jump=0,screen='world',held={},known=new Set(),items=new Set(),journal=[],sceneText='',active=null;
@@ -193,8 +193,69 @@ function drawLandscape(){
  }
 }
 
+
+const artAtlas=new Image();
+let artLoaded=false, artFailed=false, airTime=0, walkPhase=0, facing=1;
+fetch('assets/indus_pixel_atlas.b64').then(r=>{
+ if(!r.ok)throw new Error('Missing artwork ('+r.status+')');
+ return r.text();
+}).then(b64=>{
+ artAtlas.onload=()=>{artLoaded=true;};
+ artAtlas.onerror=()=>{artFailed=true;console.warn('Pixel artwork could not load');};
+ artAtlas.src='data:image/png;base64,'+b64.trim();
+}).catch(err=>{artFailed=true;console.warn('Pixel artwork unavailable:',err);});
+function layer(index,rate,y,width,height,opacity=1){
+ const offset=((p*rate%width)+width)%width;
+ ctx.save();
+ ctx.globalAlpha=opacity;
+ for(let i=-1;i<=3;i++){
+  const x=Math.round(i*width-offset);
+  if(x>320||x+width<0)continue;
+  // Mirrored repeat has matching edge pixels: no abrupt jumps at the seams.
+  if(i%2!==0){
+   ctx.save();ctx.translate(x+width,0);ctx.scale(-1,1);
+   ctx.drawImage(artAtlas,0,index*80,240,80,0,y,width,height);
+   ctx.restore();
+  }else ctx.drawImage(artAtlas,0,index*80,240,80,x,y,width,height);
+ }
+ ctx.restore();
+}
+function skyObject(sx,sy,sw,sh,seed,y,w,h,drift,scroll){
+ const span=320+w+100;
+ const x=((seed+airTime*drift-p*scroll)%span+span)%span-w-40;
+ ctx.drawImage(artAtlas,sx,7*80+sy,sw,sh,Math.round(x),y,w,h);
+}
+function drawIllustratedLandscape(){
+ // Base sky is independent: all other images have transparent backgrounds.
+ block(0,0,320,41,'#9ac4ca');block(0,41,320,30,'#b9cad0');
+ block(0,71,320,45,'#d4cba8');
+ block(246,21,18,18,'#f4d69c');block(250,17,10,26,'#f4d69c');
+ // Independent clouds move with wind even if the traveler stands still.
+ skyObject(0,2,76,34,170,8,76,29,-.075,.01);
+ skyObject(84,0,82,38,347,28,92,32,-.055,.015);
+ skyObject(164,0,76,33,525,10,83,27,-.090,.012);
+ skyObject(9,39,97,38,660,38,93,29,-.042,.017);
+ // Slow distant mountains, faster rocky hills, then river floodplain.
+ layer(0,.012,27,595,96,.88);
+ layer(1,.032,65,545,79,.93);
+ layer(2,.050,92,575,49,.94);
+ // Trees, city/ruins and waterfront are separate midground planes.
+ layer(5,.075,102,590,50,.82);
+ const year=currentYear();
+ const cityVisibility=Math.max(0,Math.min(1,(year-1550)/420));
+ if(cityVisibility>0)layer(3,.16,88,590,62,cityVisibility);
+ if(cityVisibility<1)layer(4,.16,92,570,59,1-cityVisibility);
+ // Walking ground with a separate quick-moving gravel pattern.
+ block(0,145,320,35,'#76624b');block(0,145,320,4,'#a58d67');
+ for(let i=0;i<50;i++){
+  let x=((i*37-Math.floor(p*.60))%360+360)%360-20;
+  block(x,154+(i*7)%23,4+(i%3),1,'#a48d6e');
+  if(i%3===0)block(x+8,161+(i%4)*3,2,2,'#564c3d');
+ }
+}
+
 function draw(){
- drawLandscape();
+ if(artLoaded)drawIllustratedLandscape();else drawLandscape();
  for(const e of activeEvents()){
  let x=eventScreenX(e);if(x<-30||x>350)continue;
  if(e.type==='person')person(x,e.id==='traveler'?'#82647a':e.id==='herder'?'#6f7556':'#976b4b');
@@ -212,8 +273,20 @@ function draw(){
  ctx.restore();
  }
  }
- // Player sprite
- const x=150;block(x-5,127+jump,5,15,'#45495a');block(x+3,127+jump,5,15,'#45495a');block(x-6,113+jump,16,17,'#45617d');block(x-3,104+jump,11,10,'#c99976');block(x-4,102+jump,13,4,'#40332e');block(x+10,118+jump,5,8,'#89634b');
+ // Approved gender-neutral traveler from the 8-bit asset library.
+ if(artLoaded){
+  const bob=(held.left||held.right)?(Math.floor(walkPhase/7)%2):0;
+  ctx.save();
+  if(facing<0){ctx.translate(160,0);ctx.scale(-1,1);ctx.drawImage(artAtlas,0,640,28,41,0,101+jump+bob,27,41);}
+  else ctx.drawImage(artAtlas,0,640,28,41,137,101+jump+bob,27,41);
+  ctx.restore();
+ }else{
+  const x=150;block(x-5,127+jump,5,15,'#45495a');block(x+3,127+jump,5,15,'#45495a');
+  block(x-6,113+jump,16,17,'#45617d');block(x-3,104+jump,11,10,'#c99976');
+  block(x-4,102+jump,13,4,'#40332e');block(x+10,118+jump,5,8,'#89634b');
+ }
+ // Nearest vegetation overlaps feet but never covers interactive text.
+ if(artLoaded)layer(6,.29,150,460,37,.94);
  // On-canvas 8-bit text window like a classic adventure game.
  if(screen==='encounter'){
   block(5,76,310,99,'#262c34');block(8,79,304,93,'#444d57');
@@ -235,8 +308,8 @@ function draw(){
  }
 
 }
-let previous=0;function frame(now){let dt=Math.min(2,(now-previous)/16.67||1);previous=now;
- if(screen==='world'){if(held.left)p=Math.max(min,p-speed*dt);if(held.right)p=Math.min(length,p+speed*dt);if(held.up&&jump===0)vy=-4.1;jump+=vy*dt;vy+=.34*dt;if(jump>0){jump=0;vy=0}}
+let previous=0;function frame(now){let dt=Math.min(2,(now-previous)/16.67||1);previous=now;airTime+=dt;walkPhase+=dt;
+ if(screen==='world'){if(held.left){facing=-1;p-=speed*dt;if(p<min)p=length;}if(held.right){facing=1;p+=speed*dt;if(p>length)p=min;}if(held.up&&jump===0)vy=-4.1;jump+=vy*dt;vy+=.34*dt;if(jump>0){jump=0;vy=0}}
  renderPanel();draw();requestAnimationFrame(frame)
 }
 requestAnimationFrame(frame);
