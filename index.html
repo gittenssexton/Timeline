@@ -1,25 +1,90 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Timeline — First Walk</title><style>
 *{box-sizing:border-box}body{margin:0;background:#1b1d24;color:#fff2d2;font:16px system-ui;display:flex;align-items:center;flex-direction:column;gap:9px;padding:10px 7px 24px}h1{font-size:clamp(18px,4vw,24px);margin:4px}canvas{width:min(96vw,960px);height:auto;image-rendering:pixelated;border:3px solid #8b806c;touch-action:none}.hud,.status,.panel{width:min(96vw,960px);background:#30343b;border:2px solid #b8a582;border-radius:8px;padding:10px 13px}.hud{display:flex;justify-content:space-between;font-weight:750;font-size:clamp(18px,4vw,23px)}.status{font-size:clamp(16px,3.8vw,19px);line-height:1.5;min-height:55px}.panel{font-size:18px;line-height:1.5}.panel[hidden]{display:none}.panel h2{margin:0 0 8px;font-size:21px}.controls{width:min(96vw,960px);display:grid;grid-template-columns:repeat(4,1fr);gap:6px}button{touch-action:none;background:#554d40;color:white;border:1px solid #b8a582;border-radius:8px;min-height:54px;font:700 clamp(14px,3.3vw,18px) system-ui;cursor:pointer}.controls button[data-key=use]{grid-column:span 2}button.held,button:active{background:#a58b5d;color:#17120c}.instructions{font-size:13px;text-align:center;margin:0;max-width:900px;line-height:1.4}@media(min-width:750px){.controls{grid-template-columns:repeat(7,1fr)}.controls button[data-key=use]{grid-column:auto}}@media(max-height:500px) and (orientation:landscape){body{gap:4px;padding:4px}canvas{width:min(74vw,calc((100vh - 65px)*16/9))}.hud,.status,.controls,.panel{width:min(74vw,900px)}.controls{grid-template-columns:repeat(7,1fr)}.controls button{min-height:38px}.instructions{display:none}}
-</style></head><body><h1>TIMELINE — The First Walk</h1><div class="hud"><span id="date">1900 BCE</span><span>South Asia</span></div><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas><p class="instructions">A/D or ◀/▶: travel · X/W/↑: jump · S/Q: speak/question · E/I: inventory · ↓: inspect · M: atlas · Esc: close</p><div class="controls"><button data-key="left">◀ Past</button><button data-key="right">Future ▶</button><button data-key="up">Jump</button><button data-key="down">Inspect</button><button data-key="use">Talk / Use</button><button data-key="map">Atlas</button><button data-key="inventory">Bag</button></div><div class="status" id="status" role="status">Find the traveler and examine the abandoned mound.</div><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button data-key="escape">Close</button></section><script>
-const c=document.querySelector('#game'),g=c.getContext('2d');g.imageSmoothingEnabled=false;
-let pos=18,y=0,vy=0,keys={},screen='world',knows=false,shard=false;const min=0,max=1500;
-// First test uses slow historical progression, while walking speed stays unchanged.
-const year=()=>Math.round(1900-pos*1580/max);
-const status=t=>document.querySelector('#status').textContent=t;
-function panel(){document.querySelector('#date').textContent=year()+' BCE';let p=document.querySelector('#panel');p.hidden=screen==='world';if(screen==='world')return;document.querySelector('#panelTitle').textContent=screen==='atlas'?'Historical Atlas':'Inventory & Knowledge';document.querySelector('#panelBody').textContent=screen==='atlas'?'South Asia, '+year()+' BCE. First chapter: post-Harappan settlement changes.': 'Objects: '+(shard?'Marked pottery shard':'none')+'. Knowledge: '+(knows?'Recognize certain Indus markings':'not yet learned')+'. Journal: '+(knows?'Met a traveler who remembered older settlements':'No entries yet')+'. Privileges: none.';}
-function key(k,on){keys[k]=on;if(!on)return;if(k==='map'||k==='inventory'){screen=screen===k?'world':k;keys.left=false;keys.right=false;}if(k==='escape')screen='world';if(screen==='world'){if(k==='use'){if(Math.abs(pos-325)<12){screen='talk';knows=true;status('Traveler: “These old markings tell us something about the settlements before ours. Look near the mound.”')}else status('Move closer to a person to talk.');}if(k==='down'&&Math.abs(pos-180)<12){if(knows){screen='find';shard=true;status('You uncover a pottery fragment. You recognize the marking.')}else{screen='find';status('You see something in the soil, but do not recognize it yet.')}}}if(screen==='talk'||screen==='find'){setTimeout(()=>{},0)}panel();}
-const bindings={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',KeyA:'left',KeyD:'right',KeyW:'up',KeyX:'up',KeyS:'use',KeyQ:'use',Numpad4:'left',Numpad6:'right',Numpad8:'up',Numpad2:'down',Numpad5:'use',KeyE:'inventory',Space:'use',Enter:'use',KeyM:'map',KeyI:'inventory',Escape:'escape'};
-addEventListener('keydown',e=>{let k=bindings[e.code];if(k){e.preventDefault();if(!keys[k])key(k,true)}});addEventListener('keyup',e=>{let k=bindings[e.code];if(k)key(k,false)});
-document.querySelectorAll('button').forEach(b=>{let k=b.dataset.key;const press=e=>{e.preventDefault();b.classList.add('held');key(k,true)},release=e=>{e.preventDefault();b.classList.remove('held');key(k,false)};b.addEventListener('pointerdown',press);b.addEventListener('pointerup',release);b.addEventListener('pointercancel',release);b.addEventListener('pointerleave',release);b.addEventListener('contextmenu',e=>e.preventDefault())});
-addEventListener('blur',()=>{keys={}});document.addEventListener('visibilitychange',()=>{if(document.hidden)keys={}});
-function rect(x,y,w,h,color){g.fillStyle=color;g.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
-function hut(x,phase){rect(x,99,45,40,phase>1?'#897667':'#b98a62');rect(x-4,96,53,6,'#7c6451');rect(x+15,118,11,21,'#483c34');if(phase>1){rect(x+6,96,8,8,'#a5c6b0');rect(x+31,108,6,12,'#6e5b50')}}
-function tree(x){rect(x,94,6,47,'#765b3c');rect(x-13,80,31,23,'#688a61');rect(x-7,70,22,21,'#7a9c68')}
-function draw(){g.clearRect(0,0,320,180);rect(0,0,320,180,'#bad8d0');rect(0,86,320,57,'#a2b8a0');const scroll=pos*.12;for(let i=-2;i<12;i++){const xx=((i*69-scroll*.2)%760+760)%760-50;rect(xx,79+(i%3)*4,65,36,'#91aca0')}rect(0,126,320,22,'#b9a27c');rect(0,143,320,37,'#806b51');for(let i=0;i<28;i++){let xx=((i*29-scroll*.72)%350+350)%350;rect(xx,140+(i%2)*3,6,2,'#a58b62')}
-const bx=194-(pos-550)*.2;if(bx>-70&&bx<340)hut(bx,year()<900?2:year()<1500?1:0);
-const tx=278-(pos-420)*.18;if(tx>-50&&tx<340)tree(tx);
-const mx=160-(pos-180)*.19;if(mx>-50&&mx<340){rect(mx-13,136,42,7,'#9e8865');rect(mx,132,13,4,'#a18e6f');if(knows&&!shard){rect(mx+4,125,5,5,'#5f392a')}}
-const tr=215-(pos-325)*.22;if(tr>0&&tr<320){rect(tr,117,9,17,'#694b3b');rect(tr+1,110,7,8,'#bd8b62');rect(tr-3,135,5,7,'#54392b');rect(tr+6,135,5,7,'#54392b')}
-const px=150;rect(px-3,127+y,5,15,'#484a57');rect(px+4,127+y,5,15,'#484a57');rect(px-5,113+y,16,17,'#435f7b');rect(px-2,105+y,11,10,'#c89a79');rect(px-3,103+y,13,4,'#3f322d');rect(px+11,117+y,5,9,'#8b6349')}
-let last=0;function frame(t){const dt=Math.min(2,(t-last)/16.67||1);last=t;if(screen==='world'){if(keys.left)pos=Math.max(min,pos-2.4*dt);if(keys.right)pos=Math.min(max,pos+2.4*dt);if(keys.up&&y===0)vy=-4.2;y+=vy*dt;vy+=.35*dt;if(y>0){y=0;vy=0}}panel();draw();requestAnimationFrame(frame)}requestAnimationFrame(frame);
+</style></head><body><h1>TIMELINE — Changing Indus Valley</h1><div class="hud"><span id="date">1900 BCE</span><span>South Asia</span></div><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas><p class="instructions">A/D or ◀/▶: travel · X: jump · S/Q: speak · ↓: inspect · E: inventory · J: journal · M: atlas · Esc: close</p><div class="controls"><button data-key="left">◀ Past</button><button data-key="right">Future ▶</button><button data-key="up">Jump</button><button data-key="down">Inspect</button><button data-key="use">Talk / Use</button><button data-key="map">Atlas</button><button data-key="inventory">Bag</button></div><div class="status" id="status" role="status">Travel through the changing Indus region. Approach the brick mound and press ↓ to inspect.</div><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button data-key="escape">Close</button></section><script>
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
+const dateEl=document.getElementById('date'),statusEl=document.getElementById('status'),panelEl=document.getElementById('panel'),titleEl=document.getElementById('panelTitle'),bodyEl=document.getElementById('panelBody');
+let p=16,vy=0,jump=0,screen='world',held={},known=new Set(),items=new Set(),journal=[],sceneText='',active=null;
+const length=7200,speed=2.4;const currentYear=()=>Math.round(1900-(p/length)*1200);
+const events=[
+ {id:'mound',at:290,type:'site',name:'Old brickwork',start:1900,end:700,description:'A mound of older bricks lies beside the road.',gain:'brickwork'},
+ {id:'pottery',at:720,type:'site',name:'Pottery fragments',start:1900,end:700,description:'Shards are scattered in the soil.',needs:'brickwork',gain:'pottery'},
+ {id:'farmer',at:1250,type:'person',name:'Village farmer',start:1900,end:1100,description:'“Some families remain. Our fields and wells matter more than the distant empty streets.”',gain:'villages'},
+ {id:'water',at:2170,type:'site',name:'Old water channel',start:1700,end:700,description:'The channel has shifted. Its course tells a story about changing settlement patterns.',needs:'villages',gain:'water'},
+ {id:'traveler',at:3230,type:'person',name:'Northwestern traveler',start:1700,end:900,description:'“Different families travel by different routes, bringing their words, animals, and customs. Others have been here for generations.”',gain:'migration'},
+ {id:'herder',at:4300,type:'person',name:'Pastoral herder',start:1500,end:700,description:'“Our cattle graze near the river. Songs and rituals are passed down by memory.”',gain:'oral'},
+ {id:'speaker',at:5410,type:'person',name:'Story keeper',start:1400,end:700,description:'“We remember the verses spoken by those before us. Our memories are not written on these bricks.”',gain:'traditions'},
+ {id:'settlement',at:6490,type:'site',name:'Growing settlement',start:1300,end:700,description:'Homes, fields and paths continue to change. No single event explains everything.',gain:'continuity'}
+];
+const activeEvents=()=>events.filter(e=>currentYear()<=e.start && currentYear()>=e.end);
+const range=e=>Math.abs(e.at-p)<=58;
+function message(t){statusEl.textContent=t}
+function record(t){if(!journal.includes(t))journal.push(t)}
+function open(type,text){screen=type;sceneText=text;held.left=held.right=held.up=false;renderPanel()}
+function interact(examine=false){
+ const nearby=activeEvents().filter(range).sort((a,b)=>Math.abs(a.at-p)-Math.abs(b.at-p))[0];
+ if(!nearby){message('Move closer to a person or object to interact.');return}
+ if(examine&&nearby.type==='person'){message('Press S or Q to speak.');return}
+ if(nearby.needs&&!known.has(nearby.needs)){
+ open('encounter','You notice something unusual here, but lack the knowledge to recognize its significance. Return after learning more.');return;
+ }
+ if(nearby.type==='site'&&nearby.id==='pottery')items.add('Pottery fragment');
+ known.add(nearby.gain);record(currentYear()+' BCE — '+nearby.name+': '+nearby.description);
+ open('encounter',nearby.description+'\n\nNew knowledge: '+nearby.name+(nearby.id==='pottery'?'\nObject collected: Pottery fragment':''));
+}
+function renderPanel(){
+ dateEl.textContent=currentYear()+' BCE';panelEl.hidden=screen==='world';if(screen==='world')return;
+ const pages={
+  inventory:'Objects: '+([...items].join(', ')||'none')+'\n\nKnowledge: '+([...known].join(', ')||'none')+'\n\nPrivileges: none yet.',
+  atlas:'South Asia, '+currentYear()+' BCE\n\nChapter: changes in post-Harappan communities, c. 1900–700 BCE.\n\nDiscovered sites: '+known.size+' / '+events.length,
+  journal:journal.length?journal.join('\n\n'):'No discoveries recorded yet.',
+  encounter:sceneText
+ };
+ titleEl.textContent=screen==='inventory'?'Inventory & knowledge':screen==='atlas'?'Historical atlas':screen==='journal'?'Travel journal':'Discovery';
+ bodyEl.textContent=pages[screen]||'';bodyEl.style.whiteSpace='pre-line';
+}
+function input(k,on){
+ if(!on){held[k]=false;return}
+ if(k==='escape'){screen='world';held={};renderPanel();return}
+ if(k==='inventory'||k==='map'||k==='journal'){screen=screen===k?'world':k;held={};renderPanel();return}
+ if(screen!=='world')return;
+ if(k==='use'){interact();return}
+ if(k==='down'){interact(true);return}
+ held[k]=true;
+}
+const keys={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',KeyA:'left',KeyD:'right',KeyX:'up',KeyW:'up',KeyS:'use',KeyQ:'use',KeyE:'inventory',KeyI:'inventory',KeyM:'map',KeyJ:'journal',Numpad4:'left',Numpad6:'right',Numpad8:'up',Numpad2:'down',Numpad5:'use',Space:'use',Enter:'use',Escape:'escape'};
+addEventListener('keydown',e=>{const k=keys[e.code];if(!k)return;e.preventDefault();if(!e.repeat)input(k,true)});
+addEventListener('keyup',e=>{const k=keys[e.code];if(k)input(k,false)});
+document.querySelectorAll('button[data-key]').forEach(b=>{
+ const k=b.dataset.key;
+ b.addEventListener('pointerdown',e=>{e.preventDefault();b.classList.add('held');input(k,true)});
+ for(const ev of ['pointerup','pointercancel','pointerleave'])b.addEventListener(ev,e=>{e.preventDefault();b.classList.remove('held');input(k,false)});
+ b.addEventListener('contextmenu',e=>e.preventDefault());
+});
+addEventListener('blur',()=>held={});document.addEventListener('visibilitychange',()=>{if(document.hidden)held={}});
+function block(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+function person(x,color){block(x-5,106,10,10,'#be9373');block(x-4,103,9,4,'#49372d');block(x-6,116,12,19,color);block(x-5,135,4,8,'#514039');block(x+2,135,4,8,'#514039')}
+function draw(){
+ block(0,0,320,180,'#c2dad2');block(0,78,320,51,'#9db3a3');
+ // Slow parallax hills and distant skyline
+ for(let i=-1;i<7;i++){let x=((i*93-p*.008)%560+560)%560-95;block(x,85+(i%2)*6,95,38,'#94ab9e')}
+ block(0,125,320,22,'#bea885');block(0,147,320,33,'#7b674f');
+ for(let i=0;i<24;i++){let x=((i*37-p*.08)%360+360)%360;block(x,143+i%3,7,2,'#967d5b')}
+ // The ruins slowly flatten while new small dwellings appear later.
+ let phase=currentYear()>1600?0:currentYear()>1200?1:2;
+ for(let i=0;i<4;i++){let x=45+i*86-p*.026; if(x<-80||x>340)continue;block(x,110+phase*4,40,31-phase*4,phase===2?'#947e69':'#b28c6a');block(x-3,107+phase*4,46,5,'#846e5b');if(phase===2)block(x+6,110,11,6,'#7c8c73');else block(x+13,124,9,17,'#574435')}
+ for(let i=0;i<5;i++){let x=((i*128+93-p*.048)%700+700)%700-80;block(x,103,5,39,'#715b43');block(x-11,85,29,22,'#728e64');block(x-6,77,20,20,'#829b6a')}
+ for(const e of activeEvents()){
+ let x=150+(e.at-p)*.20;if(x<-30||x>350)continue;
+ if(e.type==='person')person(x,e.id==='traveler'?'#82647a':e.id==='herder'?'#6f7556':'#976b4b');
+ else{block(x-15,136,30,6,'#907a60');block(x-5,132,15,4,'#a18c72');if(known.has(e.gain))block(x+5,125,4,5,'#5a5643')}
+ if(range(e)){block(x-4,92,8,9,'#f4df8b');block(x-1,94,2,5,'#593e27')}
+ }
+ // Player sprite
+ const x=150;block(x-5,127+jump,5,15,'#45495a');block(x+3,127+jump,5,15,'#45495a');block(x-6,113+jump,16,17,'#45617d');block(x-3,104+jump,11,10,'#c99976');block(x-4,102+jump,13,4,'#40332e');block(x+10,118+jump,5,8,'#89634b');
+}
+let previous=0;function frame(now){let dt=Math.min(2,(now-previous)/16.67||1);previous=now;
+ if(screen==='world'){if(held.left)p=Math.max(0,p-speed*dt);if(held.right)p=Math.min(length,p+speed*dt);if(held.up&&jump===0)vy=-4.1;jump+=vy*dt;vy+=.34*dt;if(jump>0){jump=0;vy=0}}
+ renderPanel();draw();requestAnimationFrame(frame)
+}
+requestAnimationFrame(frame);
 </script></body></html>
