@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Timeline — First Walk</title><style>
 *{box-sizing:border-box}body{margin:0;background:#1b1d24;color:#fff2d2;font:16px system-ui;display:flex;align-items:center;flex-direction:column;gap:9px;padding:10px 7px 24px}h1{font-size:clamp(18px,4vw,24px);margin:4px}canvas{width:min(96vw,960px);height:auto;image-rendering:pixelated;border:3px solid #8b806c;touch-action:none}.hud,.status,.panel{width:min(96vw,960px);background:#30343b;border:2px solid #b8a582;border-radius:8px;padding:10px 13px}.hud{display:flex;justify-content:space-between;font-weight:750;font-size:clamp(18px,4vw,23px)}.status{font-size:clamp(16px,3.8vw,19px);line-height:1.5;min-height:55px}.panel{font-size:18px;line-height:1.5}.panel[hidden]{display:none}.panel h2{margin:0 0 8px;font-size:21px}.controls{width:min(96vw,960px);display:grid;grid-template-columns:repeat(4,1fr);gap:6px}button{touch-action:none;background:#554d40;color:white;border:1px solid #b8a582;border-radius:8px;min-height:54px;font:700 clamp(14px,3.3vw,18px) system-ui;cursor:pointer}.controls button[data-key=use]{grid-column:span 2}button.held,button:active{background:#a58b5d;color:#17120c}.instructions{font-size:13px;text-align:center;margin:0;max-width:900px;line-height:1.4}@media(min-width:750px){.controls{grid-template-columns:repeat(7,1fr)}.controls button[data-key=use]{grid-column:auto}}@media(max-height:500px) and (orientation:landscape){body{gap:4px;padding:4px}canvas{width:min(74vw,calc((100vh - 65px)*16/9))}.hud,.status,.controls,.panel{width:min(74vw,900px)}.controls{grid-template-columns:repeat(7,1fr)}.controls button{min-height:38px}.instructions{display:none}}
-</style></head><body><h1>TIMELINE — Changing Indus Valley</h1><div class="hud"><span id="date">1900 BCE</span><span>South Asia</span></div><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas><p class="instructions">A/D or ◀/▶: travel · X: jump · S/Q: speak · ↓: inspect · E: inventory · J: journal · M: atlas · Esc: close</p><div class="controls"><button data-key="left">◀ Past</button><button data-key="right">Future ▶</button><button data-key="up">Jump</button><button data-key="down">Inspect</button><button data-key="use">Talk / Use</button><button data-key="map">Atlas</button><button data-key="inventory">Bag</button></div><div class="status" id="status" role="status">Travel through the changing Indus region. Approach the brick mound and press ↓ to inspect.</div><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button data-key="escape">Close</button></section><script>
+</style></head><body><h1>TIMELINE — Changing Indus Valley</h1><div class="hud"><span id="date">1900 BCE</span><span>South Asia</span></div><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas><p class="instructions">A/D or ◀/▶: travel · X: jump · S/Q: speak · Space/X: jump · ↓: inspect · E: inventory · J: journal · M: atlas · Esc: close</p><div class="controls"><button data-key="left">◀ Past</button><button data-key="right">Future ▶</button><button data-key="up">Jump</button><button data-key="down">Inspect</button><button data-key="use">Talk / Use</button><button data-key="map">Atlas</button><button data-key="inventory">Bag</button></div><div class="status" id="status" role="status">Travel through the changing Indus region. Approach the brick mound and press ↓ to inspect.</div><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button data-key="escape">Close</button></section><script>
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
 const dateEl=document.getElementById('date'),statusEl=document.getElementById('status'),panelEl=document.getElementById('panel'),titleEl=document.getElementById('panelTitle'),bodyEl=document.getElementById('panelBody');
 let p=16,vy=0,jump=0,screen='world',held={},known=new Set(),items=new Set(),journal=[],sceneText='',active=null;
@@ -51,7 +51,7 @@ function input(k,on){
  if(k==='down'){interact(true);return}
  held[k]=true;
 }
-const keys={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',KeyA:'left',KeyD:'right',KeyX:'up',KeyW:'up',KeyS:'use',KeyQ:'use',KeyE:'inventory',KeyI:'inventory',KeyM:'map',KeyJ:'journal',Numpad4:'left',Numpad6:'right',Numpad8:'up',Numpad2:'down',Numpad5:'use',Space:'use',Enter:'use',Escape:'escape'};
+const keys={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',KeyA:'left',KeyD:'right',KeyX:'up',KeyW:'up',KeyS:'use',KeyQ:'use',KeyE:'inventory',KeyI:'inventory',KeyM:'map',KeyJ:'journal',Numpad4:'left',Numpad6:'right',Numpad8:'up',Numpad2:'down',Numpad5:'use',Space:'up',Enter:'use',Escape:'escape'};
 addEventListener('keydown',e=>{const k=keys[e.code];if(!k)return;e.preventDefault();if(!e.repeat)input(k,true)});
 addEventListener('keyup',e=>{const k=keys[e.code];if(k)input(k,false)});
 document.querySelectorAll('button[data-key]').forEach(b=>{
@@ -62,6 +62,7 @@ document.querySelectorAll('button[data-key]').forEach(b=>{
 });
 addEventListener('blur',()=>held={});document.addEventListener('visibilitychange',()=>{if(document.hidden)held={}});
 function block(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+const promptAlpha=new Map();
 function person(x,color){block(x-5,106,10,10,'#be9373');block(x-4,103,9,4,'#49372d');block(x-6,116,12,19,color);block(x-5,135,4,8,'#514039');block(x+2,135,4,8,'#514039')}
 function draw(){
  block(0,0,320,180,'#c2dad2');block(0,78,320,51,'#9db3a3');
@@ -77,7 +78,18 @@ function draw(){
  let x=150+(e.at-p)*.20;if(x<-30||x>350)continue;
  if(e.type==='person')person(x,e.id==='traveler'?'#82647a':e.id==='herder'?'#6f7556':'#976b4b');
  else{block(x-15,136,30,6,'#907a60');block(x-5,132,15,4,'#a18c72');if(known.has(e.gain))block(x+5,125,4,5,'#5a5643')}
- if(range(e)){block(x-4,92,8,9,'#f4df8b');block(x-1,94,2,5,'#593e27')}
+ const prev=promptAlpha.get(e.id)||0;
+ const target=range(e)&&screen==='world'?1:0;
+ const alpha=Math.max(0,Math.min(1,prev+(target?0.075:-0.095)));
+ promptAlpha.set(e.id,alpha);
+ if(alpha>0){
+ ctx.save();ctx.globalAlpha=alpha;
+ block(x-12,87,24,16,'#363a3e');block(x-11,88,22,13,'#f4e9c6');
+ block(x-2,101,5,4,'#363a3e');
+ ctx.fillStyle='#292e32';ctx.font='bold 10px monospace';ctx.textAlign='center';
+ ctx.fillText(e.type==='person'?'S':'↓',Math.round(x),98);
+ ctx.restore();
+ }
  }
  // Player sprite
  const x=150;block(x-5,127+jump,5,15,'#45495a');block(x+3,127+jump,5,15,'#45495a');block(x-6,113+jump,16,17,'#45617d');block(x-3,104+jump,11,10,'#c99976');block(x-4,102+jump,13,4,'#40332e');block(x+10,118+jump,5,8,'#89634b');
