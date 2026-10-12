@@ -18,7 +18,7 @@ const events=[
 const activeEvents=()=>events.filter(e=>currentYear()<=e.start && currentYear()>=e.end);
 // One transform controls rendering, interaction targeting and prompts.
 const eventScreenX=e=>150+(e.at-p)*.20;
-const range=e=>Math.abs(eventScreenX(e)-150)<=16; // sprites overlap + 2 native pixels
+const range=e=>Math.abs(eventScreenX(e)-150)<=7; // player must stand directly over the sprite or item
 function message(t){statusEl.textContent=t}
 function record(t){if(!journal.includes(t))journal.push(t)}
 function open(type,text){screen=type;sceneText=text;held={};message(text.split('\n')[0]);renderPanel()}
