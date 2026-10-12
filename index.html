@@ -200,10 +200,10 @@ fetch('assets/indus_pixel_atlas.b64').then(r=>{
  if(!r.ok)throw new Error('Missing artwork ('+r.status+')');
  return r.text();
 }).then(b64=>{
- artAtlas.onload=()=>{artLoaded=true;};
- artAtlas.onerror=()=>{artFailed=true;console.warn('Pixel artwork could not load');};
+ artAtlas.onload=()=>{artLoaded=true;message('Pixel-art landscape loaded. Walk left or right to scroll; scenery loops.');};
+ artAtlas.onerror=()=>{artFailed=true;message('Artwork did not load. Refresh to retry the illustrated scene.');console.warn('Pixel artwork could not load');};
  artAtlas.src='data:image/png;base64,'+b64.trim();
-}).catch(err=>{artFailed=true;console.warn('Pixel artwork unavailable:',err);});
+}).catch(err=>{artFailed=true;message('Artwork did not load. Refresh to retry the illustrated scene.');console.warn('Pixel artwork unavailable:',err);});
 function layer(index,rate,y,width,height,opacity=1){
  const period=width*2;
  const offset=((p*rate%period)+period)%period;
@@ -287,7 +287,10 @@ function draw(){
   block(x-4,102+jump,13,4,'#40332e');block(x+10,118+jump,5,8,'#89634b');
  }
  // Nearest vegetation overlaps feet but never covers interactive text.
- if(artLoaded)layer(6,.29,150,460,37,.94);
+ if(artLoaded){
+  layer(6,.29,150,460,37,.94);
+  block(4,3,91,12,'#303e48');ctx.fillStyle='#fff0bd';ctx.font='8px monospace';ctx.textAlign='left';ctx.fillText('LANDSCAPE LOOP',7,12);
+ }
  // On-canvas 8-bit text window like a classic adventure game.
  if(screen==='encounter'){
   block(5,76,310,99,'#262c34');block(8,79,304,93,'#444d57');
