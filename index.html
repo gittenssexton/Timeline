@@ -55,15 +55,30 @@ function input(k,on){
  held[k]=true;
 }
 const keys={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',KeyA:'left',KeyD:'right',KeyX:'up',KeyW:'up',KeyS:'use',KeyQ:'use',KeyE:'inventory',KeyI:'inventory',KeyM:'map',KeyJ:'journal',Numpad4:'left',Numpad6:'right',Numpad8:'up',Numpad2:'down',Numpad5:'use',Space:'up',Enter:'use',Escape:'escape'};
-addEventListener('keydown',e=>{const k=keys[e.code];if(!k)return;e.preventDefault();if(!e.repeat)input(k,true)});
-addEventListener('keyup',e=>{const k=keys[e.code];if(k)input(k,false)});
+// Keyboard and on-screen buttons both call input(). Avoid losing key presses
+// when a panel/button owns focus, and support browsers that report key not code.
+const fallback={s:'use',q:'use',x:'up',' ':'up',ArrowDown:'down',e:'inventory',i:'inventory',m:'map',j:'journal',Escape:'escape',a:'left',d:'right',w:'up'};
+const downKeys=new Set();
+function actionForKey(e){return keys[e.code]||fallback[e.key]||fallback[e.key?.toLowerCase()]}
+document.addEventListener('keydown',e=>{
+ const k=actionForKey(e);if(!k)return;
+ e.preventDefault();e.stopPropagation();
+ const id=e.code||e.key;
+ if(downKeys.has(id))return;
+ downKeys.add(id);input(k,true);
+},true);
+document.addEventListener('keyup',e=>{
+ const k=actionForKey(e);if(!k)return;
+ e.preventDefault();e.stopPropagation();
+ downKeys.delete(e.code||e.key);input(k,false);
+},true);
 document.querySelectorAll('button[data-key]').forEach(b=>{
  const k=b.dataset.key;
  b.addEventListener('pointerdown',e=>{e.preventDefault();b.classList.add('held');input(k,true)});
  for(const ev of ['pointerup','pointercancel','pointerleave'])b.addEventListener(ev,e=>{e.preventDefault();b.classList.remove('held');input(k,false)});
  b.addEventListener('contextmenu',e=>e.preventDefault());
 });
-addEventListener('blur',()=>held={});document.addEventListener('visibilitychange',()=>{if(document.hidden)held={}});
+addEventListener('blur',()=>{held={};downKeys.clear()});document.addEventListener('visibilitychange',()=>{if(document.hidden){held={};downKeys.clear()}});
 function block(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
 const promptAlpha=new Map();
 function person(x,color){block(x-5,106,10,10,'#be9373');block(x-4,103,9,4,'#49372d');block(x-6,116,12,19,color);block(x-5,135,4,8,'#514039');block(x+2,135,4,8,'#514039')}
