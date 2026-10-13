@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Timeline — First Walk</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Timeline — Indus Valley</title><style>
 *{box-sizing:border-box}
 body{margin:0;background:#1b1d24;color:#fff2d2;font:16px system-ui;display:flex;align-items:center;flex-direction:column;gap:9px;padding:10px 7px 24px}
 h1{font-size:clamp(18px,4vw,24px);margin:4px}
@@ -25,7 +25,17 @@ button{cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}
  .controls{gap:9px}.controls .icon-button{height:40px;width:43px;padding:8px}
  .nav-button{width:42px;height:50px;padding:7px}.instructions{display:none}
 }
-</style></head><body><h1>TIMELINE — Scrolling Indus Valley</h1><div class="hud"><span id="date">2650 BCE</span><span>South Asia · Scenery loop ↻</span></div><div class="game-stage"><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas><button type="button" class="icon-button nav-button" data-key="left" aria-label="Move left toward the past" title="Move left toward the past"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 4-8 8 8 8"/><path d="M8 12h12"/></svg></button><button type="button" class="icon-button nav-button" data-key="right" aria-label="Move right toward the future" title="Move right toward the future"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 4 8 8-8 8"/><path d="M16 12H4"/></svg></button></div><p class="instructions">A/D or ◀/▶: travel · Space/X: jump · S/Q: speak · ↓: inspect · E: inventory · J: journal · M: atlas · Esc: close</p><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button type="button" class="icon-button " data-key="escape" aria-label="Close panel" title="Close panel"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5 19 19M19 5 5 19"/></svg></button></section><div class="controls" role="group" aria-label="Game actions"><button type="button" class="icon-button " data-key="up" aria-label="Jump" title="Jump"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 3-5 6h3v7h4V9h3z"/><path d="M5 21h14"/><path d="m7 18-2 3m12-3 2 3"/></svg></button><button type="button" class="icon-button " data-key="down" aria-label="Inspect" title="Inspect"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/><path d="m8 11 2 2 4-5"/></svg></button><button type="button" class="icon-button " data-key="use" aria-label="Speak or interact" title="Speak or interact"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h16v13H10l-5 4v-4H4z"/><path d="M8 9h8M8 13h5"/></svg></button><button type="button" class="icon-button " data-key="map" aria-label="Open atlas" title="Open atlas"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"/><path d="M9 3v16M15 5v16"/></svg></button><button type="button" class="icon-button " data-key="inventory" aria-label="Open bag" title="Open bag"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="7" width="16" height="14" rx="2"/><path d="M9 7V5a3 3 0 0 1 6 0v2M4 12h16"/></svg></button></div><div class="status" id="status" role="status">Scrolling artwork preview: travel through the valley. The scenery and journey repeat at the ends for this demo.</div><script>
+
+/* One pixel-art control deck beneath the image; SVG skins behave like raster buttons. */
+.controls{width:min(96vw,710px);display:grid;grid-template-columns:repeat(7,minmax(0,1fr));flex-wrap:nowrap;gap:clamp(3px,1vw,10px);padding:clamp(7px,1.4vw,12px);background:#273239 url('assets/ui/control-deck.svg') center/100% 100% no-repeat;line-height:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none;overscroll-behavior:contain}
+.controls .icon-button{width:100%;min-width:0;max-width:76px;height:auto;aspect-ratio:1/1;margin-inline:auto;padding:clamp(7px,1.6vw,13px);border:0;border-radius:0;background:transparent url('assets/ui/button-normal.svg') center/100% 100% no-repeat;box-shadow:none;color:#f6e7b9;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none}
+.controls .icon-button.held,.controls .icon-button:active{background:transparent url('assets/ui/button-pressed.svg') center/100% 100% no-repeat;color:#24343b;box-shadow:none}
+.controls .icon-button svg{stroke-width:2.4;stroke-linecap:square;stroke-linejoin:miter;pointer-events:none}
+.controls .icon-button:focus-visible{outline:3px solid #f5dc99;outline-offset:0}
+@media(max-width:390px){.controls{width:96vw;gap:3px;padding:6px}.controls .icon-button{padding:6px}}
+@media(max-height:500px) and (orientation:landscape){.controls{width:min(74vw,710px);gap:4px;padding:5px}.controls .icon-button{width:100%;height:auto;padding:5px}}
+
+</style></head><body><h1>TIMELINE — Scrolling Indus Valley</h1><div class="hud"><span id="date">2650 BCE</span><span>South Asia · Scenery loop ↻</span></div><div class="game-stage"><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas></div><p class="instructions">A/D or ◀/▶: travel · Space/X: jump · S/Q: speak · ↓: inspect · E: inventory · J: journal · M: atlas · Esc: close</p><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button type="button" class="icon-button " data-key="escape" aria-label="Close panel" title="Close panel"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5 19 19M19 5 5 19"/></svg></button></section><div class="controls" role="group" aria-label="Game actions"><button type="button" class="icon-button" data-key="left" aria-label="Move left toward the past" title="Move left toward the past"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 4-8 8 8 8"/><path d="M8 12h12"/></svg></button><button type="button" class="icon-button " data-key="up" aria-label="Jump" title="Jump"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 3-5 6h3v7h4V9h3z"/><path d="M5 21h14"/><path d="m7 18-2 3m12-3 2 3"/></svg></button><button type="button" class="icon-button " data-key="down" aria-label="Inspect" title="Inspect"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/><path d="m8 11 2 2 4-5"/></svg></button><button type="button" class="icon-button " data-key="use" aria-label="Speak or interact" title="Speak or interact"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4h16v13H10l-5 4v-4H4z"/><path d="M8 9h8M8 13h5"/></svg></button><button type="button" class="icon-button " data-key="map" aria-label="Open atlas" title="Open atlas"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z"/><path d="M9 3v16M15 5v16"/></svg></button><button type="button" class="icon-button " data-key="inventory" aria-label="Open bag" title="Open bag"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="7" width="16" height="14" rx="2"/><path d="M9 7V5a3 3 0 0 1 6 0v2M4 12h16"/></svg></button><button type="button" class="icon-button" data-key="right" aria-label="Move right toward the future" title="Move right toward the future"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 4 8 8-8 8"/><path d="M16 12H4"/></svg></button></div><div class="status" id="status" role="status">Scrolling artwork preview: travel through the valley. The scenery and journey repeat at the ends for this demo.</div><script>
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
 const dateEl=document.getElementById('date'),statusEl=document.getElementById('status'),panelEl=document.getElementById('panel'),titleEl=document.getElementById('panelTitle'),bodyEl=document.getElementById('panelBody');
 let p=-4470,vy=0,jump=0,screen='world',held={},known=new Set(),items=new Set(),journal=[],sceneText='',active=null;
@@ -65,14 +75,14 @@ function interact(examine=false){
  open('encounter','You notice something unusual here, but lack the knowledge to recognize its significance. Return after learning more.');return;
  }
  if(nearby.type==='site'&&nearby.id==='pottery')items.add('Pottery fragment');
- known.add(nearby.gain);record(currentYear()+' BCE — '+nearby.name+': '+nearby.description);
+ known.add(nearby.gain);record(formatHistoricalYear(currentYear())+' — '+nearby.name+': '+nearby.description);
  open('encounter',nearby.name+'\n'+nearby.description+'\n\nNew knowledge: '+nearby.name+(nearby.id==='pottery'?'\nObject collected: Pottery fragment':''));
 }
 function renderPanel(){
- dateEl.textContent=currentYear()+' BCE';panelEl.hidden=screen==='world'||screen==='encounter';if(screen==='world'||screen==='encounter')return;
+ dateEl.textContent=formatHistoricalYear(currentYear());panelEl.hidden=screen==='world'||screen==='encounter';if(screen==='world'||screen==='encounter')return;
  const pages={
   inventory:'Objects: '+([...items].join(', ')||'none')+'\n\nKnowledge: '+([...known].join(', ')||'none')+'\n\nPrivileges: none yet.',
-  atlas:'South Asia, '+currentYear()+' BCE\n\nChapter: Harappan cities and post-Harappan communities, c. 2650–700 BCE.\n\nDiscovered sites: '+known.size+' / '+events.length,
+  atlas:'South Asia, '+formatHistoricalYear(currentYear())+'\n\nChapter: Harappan cities and post-Harappan communities, c. 2650–700 BCE.\n\nDiscovered sites: '+known.size+' / '+events.length,
   journal:journal.length?journal.join('\n\n'):'No discoveries recorded yet.',
   encounter:sceneText
  };
@@ -109,12 +119,57 @@ document.addEventListener('keyup',e=>{
 },true);
 document.querySelectorAll('button[data-key]').forEach(b=>{
  const k=b.dataset.key;
- b.addEventListener('pointerdown',e=>{e.preventDefault();b.classList.add('held');input(k,true)});
- for(const ev of ['pointerup','pointercancel','pointerleave'])b.addEventListener(ev,e=>{e.preventDefault();b.classList.remove('held');input(k,false)});
- b.addEventListener('contextmenu',e=>e.preventDefault());
+ b.draggable=false;
+ b.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  e.preventDefault();
+  if(b.setPointerCapture)try{b.setPointerCapture(e.pointerId)}catch(_){}
+  b.classList.add('held');input(k,true);
+ });
+ const release=e=>{
+  e.preventDefault();
+  if(!b.classList.contains('held'))return;
+  b.classList.remove('held');input(k,false);
+ };
+ for(const ev of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(ev,release);
+ for(const ev of ['contextmenu','dragstart','selectstart'])b.addEventListener(ev,e=>e.preventDefault());
 });
+const controlDeck=document.querySelector('.controls');
+for(const ev of ['selectstart','dragstart','contextmenu'])controlDeck.addEventListener(ev,e=>e.preventDefault());
 addEventListener('blur',()=>{held={};downKeys.clear()});document.addEventListener('visibilitychange',()=>{if(document.hidden){held={};downKeys.clear()}});
 function block(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+
+// Time ruler is anchored to history, not to the moving parallax scenery.
+const historicalYearAt=worldPos=>1900-worldPos/6;
+const formatHistoricalYear=year=>Math.round(year)>0
+ ?Math.round(year)+' BCE':(1-Math.round(year))+' CE';
+function drawDateRuler(){
+ const centerYear=historicalYearAt(p);
+ const pxPerYear=1.2; // 6 world units per year, 0.2px per world unit
+ const earliest=centerYear+150/pxPerYear;
+ const latest=centerYear-(320-150)/pxPerYear;
+ ctx.save();
+ ctx.globalAlpha=.86;
+ block(0,0,320,29,'#222f37');
+ ctx.globalAlpha=1;
+ block(0,4,320,1,'#c5a976');
+ for(let year=Math.ceil(latest/10)*10;year<=earliest;year+=10){
+  const x=Math.round(150+(centerYear-year)*pxPerYear);
+  const fiveHundred=year%500===0,century=year%100===0,halfCentury=year%50===0;
+  const tickHeight=fiveHundred?15:century?11:halfCentury?7:3;
+  block(x,5,1,tickHeight,fiveHundred?'#ffd68a':century?'#f5e8c4':'#baa785');
+  if(century){
+   ctx.font=fiveHundred?'bold 8px monospace':'7px monospace';
+   ctx.textAlign='center';
+   ctx.fillStyle=fiveHundred?'#ffde8b':'#e3d6b8';
+   ctx.fillText(formatHistoricalYear(year),x,26);
+  }
+ }
+ block(149,0,3,4,'#ffe29c');
+ block(148,4,5,2,'#ffe29c');
+ ctx.restore();
+}
+
 const promptAlpha=new Map();
 function person(x,color){block(x-5,106,10,10,'#be9373');block(x-4,103,9,4,'#49372d');block(x-6,116,12,19,color);block(x-5,135,4,8,'#514039');block(x+2,135,4,8,'#514039')}
 
@@ -290,6 +345,7 @@ function draw(){
   block(144,108+jump,14,29,'#76583e');block(146,100+jump,10,10,'#b18a67');
  }
  drawForeground();
+ drawDateRuler();
  // On-canvas 8-bit text window like a classic adventure game.
  if(screen==='encounter'){
   block(5,76,310,99,'#262c34');block(8,79,304,93,'#444d57');

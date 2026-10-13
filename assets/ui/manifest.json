@@ -1,0 +1,68 @@
+{
+  "version": "2026-10-13",
+  "purpose": "Timeline game control deck visual assets",
+  "assets": [
+    {
+      "id": "control-surface",
+      "path": "control-deck.svg",
+      "type": "independent background image",
+      "description": "Pixel-art plate placed BELOW canvas, around seven buttons"
+    },
+    {
+      "id": "normal-key",
+      "path": "button-normal.svg",
+      "type": "button image",
+      "description": "Default 64px pixel-outline button; no embedded label text"
+    },
+    {
+      "id": "pressed-key",
+      "path": "button-pressed.svg",
+      "type": "button image",
+      "description": "Pressed variant; native pointer-down, not hover, changes appearance"
+    }
+  ],
+  "icons": [
+    {
+      "order": 1,
+      "label": "Move left toward the past",
+      "status": "reuses in-game inline vector icon, no selectable text"
+    },
+    {
+      "order": 2,
+      "label": "Jump",
+      "status": "reuses in-game inline vector icon, no selectable text"
+    },
+    {
+      "order": 3,
+      "label": "Inspect",
+      "status": "reuses in-game inline vector icon, no selectable text"
+    },
+    {
+      "order": 4,
+      "label": "Speak or interact",
+      "status": "reuses in-game inline vector icon, no selectable text"
+    },
+    {
+      "order": 5,
+      "label": "Open atlas",
+      "status": "reuses in-game inline vector icon, no selectable text"
+    },
+    {
+      "order": 6,
+      "label": "Open bag",
+      "status": "reuses in-game inline vector icon, no selectable text"
+    },
+    {
+      "order": 7,
+      "label": "Move right toward the future",
+      "status": "reuses in-game inline vector icon, no selectable text"
+    }
+  ],
+  "qualityRules": [
+    "No browser native text selection, callouts or draggable controls",
+    "Each icon must stay inside touch target",
+    "Use same visual palette and deck on mobile and desktop",
+    "Gameplay input and prompts remain mapped to physical player position",
+    "Timeline ruler ticks every 10 years, century labels in BCE or CE, highlighted 500-year marks"
+  ]
+}
