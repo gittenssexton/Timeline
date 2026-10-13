@@ -1,12 +1,21 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Timeline — First Walk</title><style>
 *{box-sizing:border-box}body{margin:0;background:#1b1d24;color:#fff2d2;font:16px system-ui;display:flex;align-items:center;flex-direction:column;gap:9px;padding:10px 7px 24px}h1{font-size:clamp(18px,4vw,24px);margin:4px}canvas{width:min(96vw,960px);height:auto;image-rendering:pixelated;border:3px solid #8b806c;touch-action:none}.hud,.status,.panel{width:min(96vw,960px);background:#30343b;border:2px solid #b8a582;border-radius:8px;padding:10px 13px}.hud{display:flex;justify-content:space-between;font-weight:750;font-size:clamp(18px,4vw,23px)}.status{font-size:clamp(16px,3.8vw,19px);line-height:1.5;min-height:55px}.panel{font-size:18px;line-height:1.5}.panel[hidden]{display:none}.panel h2{margin:0 0 8px;font-size:21px}.controls{width:min(96vw,960px);display:grid;grid-template-columns:repeat(4,1fr);gap:6px}button{touch-action:none;background:#554d40;color:white;border:1px solid #b8a582;border-radius:8px;min-height:54px;font:700 clamp(14px,3.3vw,18px) system-ui;cursor:pointer}.controls button[data-key=use]{grid-column:span 2}button.held,button:active{background:#a58b5d;color:#17120c}.instructions{font-size:13px;text-align:center;margin:0;max-width:900px;line-height:1.4}@media(min-width:750px){.controls{grid-template-columns:repeat(7,1fr)}.controls button[data-key=use]{grid-column:auto}}@media(max-height:500px) and (orientation:landscape){body{gap:4px;padding:4px}canvas{width:min(74vw,calc((100vh - 65px)*16/9))}.hud,.status,.controls,.panel{width:min(74vw,900px)}.controls{grid-template-columns:repeat(7,1fr)}.controls button{min-height:38px}.instructions{display:none}}
-</style></head><body><h1>TIMELINE — Scrolling Indus Valley</h1><div class="hud"><span id="date">2200 BCE</span><span>South Asia · Scenery loop ↻</span></div><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas><p class="instructions">A/D or ◀/▶: travel · Space/X: jump · S/Q: speak · ↓: inspect · E: inventory · J: journal · M: atlas · Esc: close</p><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button data-key="escape">Close</button></section><div class="controls"><button data-key="left">◀ Past</button><button data-key="right">Future ▶</button><button data-key="up">Jump</button><button data-key="down">Inspect</button><button data-key="use">Talk / Use</button><button data-key="map">Atlas</button><button data-key="inventory">Bag</button></div><div class="status" id="status" role="status">Scrolling artwork preview: travel through the valley. The scene repeats when you reach either end.</div><script>
+</style></head><body><h1>TIMELINE — Scrolling Indus Valley</h1><div class="hud"><span id="date">2650 BCE</span><span>South Asia · Scenery loop ↻</span></div><canvas id="game" width="320" height="180" aria-label="Side scrolling historical timeline"></canvas><p class="instructions">A/D or ◀/▶: travel · Space/X: jump · S/Q: speak · ↓: inspect · E: inventory · J: journal · M: atlas · Esc: close</p><section class="panel" id="panel" hidden><h2 id="panelTitle"></h2><div id="panelBody"></div><button data-key="escape">Close</button></section><div class="controls"><button data-key="left">◀ Past</button><button data-key="right">Future ▶</button><button data-key="up">Jump</button><button data-key="down">Inspect</button><button data-key="use">Talk / Use</button><button data-key="map">Atlas</button><button data-key="inventory">Bag</button></div><div class="status" id="status" role="status">Scrolling artwork preview: travel through the valley. The scenery and journey repeat at the ends for this demo.</div><script>
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
 const dateEl=document.getElementById('date'),statusEl=document.getElementById('status'),panelEl=document.getElementById('panel'),titleEl=document.getElementById('panelTitle'),bodyEl=document.getElementById('panelBody');
-let p=-1790,vy=0,jump=0,screen='world',held={},known=new Set(),items=new Set(),journal=[],sceneText='',active=null;
-const length=7200,min=-1800,speed=2.4;const currentYear=()=>Math.round(1900-(p/length)*1200);
+let p=-4470,vy=0,jump=0,screen='world',held={},known=new Set(),items=new Set(),journal=[],sceneText='',active=null;
+const length=7200,min=-4500,speed=2.4;const currentYear=()=>Math.round(1900-(p/length)*1200);
 const events=[
- {id:'craft',at:-1150,type:'person',name:'Harappan craft worker',start:2300,end:1800,description:'“Our well and brick drains need constant care. Beads and other goods travel to distant places.”',gain:'urban-life'},
+ {"id":"npc_potter","at":-4140,"type":"person","name":"Potter","start":2675,"end":2505,"description":"“This jar is fired clay. We shape vessels for storing grain, water, and the things a household needs.”","gain":"harappan-potter","spriteIndex":0},
+ {"id":"npc_beadmaker","at":-3710,"type":"person","name":"Bead maker","start":2603,"end":2433,"description":"“These small beads take patience. Stone is shaped, drilled, and polished before it can be traded.”","gain":"harappan-beadmaker","spriteIndex":1},
+ {"id":"npc_elder","at":-3290,"type":"person","name":"Elder","start":2533,"end":2363,"description":"“Bricks from an old wall can be used again. A city is always repairing and rebuilding itself.”","gain":"harappan-elder","spriteIndex":2},
+ {"id":"npc_farmer","at":-2840,"type":"person","name":"Farmer","start":2458,"end":2288,"description":"“We grow wheat and barley, and our cattle are important to the work of the household.”","gain":"harappan-farmer","spriteIndex":3},
+ {"id":"npc_watercarrier","at":-2420,"type":"person","name":"Water carrier","start":2388,"end":2218,"description":"“Our well is close to our homes. The brick-lined drains carry used water away from the street.”","gain":"harappan-watercarrier","spriteIndex":4},
+ {"id":"npc_courier","at":-2000,"type":"person","name":"Young courier","start":2318,"end":2148,"description":"“I carry a parcel marked by a seal. People here recognize the marks on the things they send.”","gain":"harappan-courier","spriteIndex":5},
+ {"id":"npc_weaver","at":-1540,"type":"person","name":"Weaver","start":2242,"end":2072,"description":"“This thread comes from cotton. It takes spinning, weaving, and much work to make cloth.”","gain":"harappan-weaver","spriteIndex":6},
+ {"id":"npc_child","at":-1130,"type":"person","name":"Child with clay toy","start":2173,"end":2003,"description":"“I have a little clay animal. Do you think it is a bull? What else might someone make from clay?”","gain":"harappan-child","spriteIndex":7},
+ {"id":"npc_merchant","at":-700,"type":"person","name":"Merchant","start":2102,"end":1932,"description":"“Beads, shells, metals, and stones arrive by routes that reach far beyond this city.”","gain":"harappan-merchant","spriteIndex":8},
+ {"id":"npc_shepherd","at":-230,"type":"person","name":"Herder","start":2023,"end":1853,"description":"“The cattle need grazing. We travel to places where there is grass and water.”","gain":"harappan-shepherd","spriteIndex":9},
  {id:'mound',at:290,type:'site',name:'Old brickwork',start:1900,end:700,description:'A mound of older bricks lies beside the road.',gain:'brickwork'},
  {id:'pottery',at:720,type:'site',name:'Pottery fragments',start:1900,end:700,description:'Shards are scattered in the soil.',needs:'brickwork',gain:'pottery'},
  {id:'farmer',at:1250,type:'person',name:'Village farmer',start:1900,end:1100,description:'“Some families remain. Our fields and wells matter more than the distant empty streets.”',gain:'villages'},
@@ -38,7 +47,7 @@ function renderPanel(){
  dateEl.textContent=currentYear()+' BCE';panelEl.hidden=screen==='world'||screen==='encounter';if(screen==='world'||screen==='encounter')return;
  const pages={
   inventory:'Objects: '+([...items].join(', ')||'none')+'\n\nKnowledge: '+([...known].join(', ')||'none')+'\n\nPrivileges: none yet.',
-  atlas:'South Asia, '+currentYear()+' BCE\n\nChapter: changes in post-Harappan communities, c. 2200–700 BCE.\n\nDiscovered sites: '+known.size+' / '+events.length,
+  atlas:'South Asia, '+currentYear()+' BCE\n\nChapter: Harappan cities and post-Harappan communities, c. 2650–700 BCE.\n\nDiscovered sites: '+known.size+' / '+events.length,
   journal:journal.length?journal.join('\n\n'):'No discoveries recorded yet.',
   encounter:sceneText
  };
@@ -134,6 +143,7 @@ function horse(x){
  block(x+22,106,7,3,'#524238');
 }
 
+const npcSprites=new Image();npcSprites.src='assets/harappan_npcs.png';
 const art={};
 for(const name of ['traveler','cloud','wisps','mountains','valley','city','forest','reeds','ruins']){
  const img=new Image();
@@ -195,8 +205,11 @@ function drawLandscape(){
  tileAsset('forest',travel*.12+110,480,85,147,.90);
  // Prominent settlements move as discrete landmarks, not repeating every few steps.
  // Each pass through the demo timeline repeats these at their original coordinates.
- const urbanX=150+(-1370-p)*.18;
- if(urbanX>-350&&urbanX<690)drawAsset('city',urbanX-185,61,415,98,1);
+ // Mature Harappan urban districts recur geographically within this long test scene.
+ for(const townAt of [-3800,-2850,-1370]){
+  const urbanX=150+(townAt-p)*.18;
+  if(urbanX>-350&&urbanX<690)drawAsset('city',urbanX-185,61,415,98,1);
+ }
  const ruinX=150+(1130-p)*.18;
  if(ruinX>-350&&ruinX<690)drawAsset('ruins',ruinX-185,72,407,92,1);
  // Continuous surface of the road. The world scrolls, the sprite remains centered.
@@ -218,7 +231,11 @@ function draw(){
  drawLandscape();
  for(const e of activeEvents()){
  let x=eventScreenX(e);if(x<-30||x>350)continue;
- if(e.type==='person')person(x,e.id==='traveler'?'#82647a':e.id==='herder'?'#6f7556':'#976b4b');
+ if(e.type==='person'){
+  if(Number.isInteger(e.spriteIndex)&&npcSprites.complete&&npcSprites.naturalWidth>=640){
+   ctx.drawImage(npcSprites,e.spriteIndex*64,0,64,64,Math.round(x)-32,82,64,64);
+  } else person(x,e.id==='traveler'?'#82647a':e.id==='herder'?'#6f7556':'#976b4b');
+ }
  else{block(x-15,136,30,6,'#907a60');block(x-5,132,15,4,'#a18c72');if(known.has(e.gain))block(x+5,125,4,5,'#5a5643')}
  const prev=promptAlpha.get(e.id)||0;
  const target=range(e)&&screen==='world'?1:0;
@@ -226,10 +243,11 @@ function draw(){
  promptAlpha.set(e.id,alpha);
  if(alpha>0){
  ctx.save();ctx.globalAlpha=alpha;
- block(x-12,87,24,16,'#363a3e');block(x-11,88,22,13,'#f4e9c6');
- block(x-2,101,5,4,'#363a3e');
+ const promptY=Number.isInteger(e.spriteIndex)?75:87;
+ block(x-12,promptY,24,16,'#363a3e');block(x-11,promptY+1,22,13,'#f4e9c6');
+ block(x-2,promptY+14,5,4,'#363a3e');
  ctx.fillStyle='#292e32';ctx.font='bold 10px monospace';ctx.textAlign='center';
- ctx.fillText(e.type==='person'?'S':'↓',Math.round(x),98);
+ ctx.fillText(e.type==='person'?'S':'↓',Math.round(x),promptY+11);
  ctx.restore();
  }
  }
