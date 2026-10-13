@@ -75,14 +75,14 @@ function interact(examine=false){
  open('encounter','You notice something unusual here, but lack the knowledge to recognize its significance. Return after learning more.');return;
  }
  if(nearby.type==='site'&&nearby.id==='pottery')items.add('Pottery fragment');
- known.add(nearby.gain);record(currentYear()+' BCE — '+nearby.name+': '+nearby.description);
+ known.add(nearby.gain);record(formatHistoricalYear(currentYear())+' — '+nearby.name+': '+nearby.description);
  open('encounter',nearby.name+'\n'+nearby.description+'\n\nNew knowledge: '+nearby.name+(nearby.id==='pottery'?'\nObject collected: Pottery fragment':''));
 }
 function renderPanel(){
- dateEl.textContent=currentYear()+' BCE';panelEl.hidden=screen==='world'||screen==='encounter';if(screen==='world'||screen==='encounter')return;
+ dateEl.textContent=formatHistoricalYear(currentYear());panelEl.hidden=screen==='world'||screen==='encounter';if(screen==='world'||screen==='encounter')return;
  const pages={
   inventory:'Objects: '+([...items].join(', ')||'none')+'\n\nKnowledge: '+([...known].join(', ')||'none')+'\n\nPrivileges: none yet.',
-  atlas:'South Asia, '+currentYear()+' BCE\n\nChapter: Harappan cities and post-Harappan communities, c. 2650–700 BCE.\n\nDiscovered sites: '+known.size+' / '+events.length,
+  atlas:'South Asia, '+formatHistoricalYear(currentYear())+'\n\nChapter: Harappan cities and post-Harappan communities, c. 2650–700 BCE.\n\nDiscovered sites: '+known.size+' / '+events.length,
   journal:journal.length?journal.join('\n\n'):'No discoveries recorded yet.',
   encounter:sceneText
  };
@@ -138,6 +138,38 @@ const controlDeck=document.querySelector('.controls');
 for(const ev of ['selectstart','dragstart','contextmenu'])controlDeck.addEventListener(ev,e=>e.preventDefault());
 addEventListener('blur',()=>{held={};downKeys.clear()});document.addEventListener('visibilitychange',()=>{if(document.hidden){held={};downKeys.clear()}});
 function block(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+
+// Time ruler is anchored to history, not to the moving parallax scenery.
+const historicalYearAt=worldPos=>1900-worldPos/6;
+const formatHistoricalYear=year=>Math.round(year)>0
+ ?Math.round(year)+' BCE':(1-Math.round(year))+' CE';
+function drawDateRuler(){
+ const centerYear=historicalYearAt(p);
+ const pxPerYear=1.2; // 6 world units per year, 0.2px per world unit
+ const earliest=centerYear+150/pxPerYear;
+ const latest=centerYear-(320-150)/pxPerYear;
+ ctx.save();
+ ctx.globalAlpha=.86;
+ block(0,0,320,29,'#222f37');
+ ctx.globalAlpha=1;
+ block(0,4,320,1,'#c5a976');
+ for(let year=Math.ceil(latest/10)*10;year<=earliest;year+=10){
+  const x=Math.round(150+(centerYear-year)*pxPerYear);
+  const fiveHundred=year%500===0,century=year%100===0,halfCentury=year%50===0;
+  const tickHeight=fiveHundred?15:century?11:halfCentury?7:3;
+  block(x,5,1,tickHeight,fiveHundred?'#ffd68a':century?'#f5e8c4':'#baa785');
+  if(century){
+   ctx.font=fiveHundred?'bold 8px monospace':'7px monospace';
+   ctx.textAlign='center';
+   ctx.fillStyle=fiveHundred?'#ffde8b':'#e3d6b8';
+   ctx.fillText(formatHistoricalYear(year),x,26);
+  }
+ }
+ block(149,0,3,4,'#ffe29c');
+ block(148,4,5,2,'#ffe29c');
+ ctx.restore();
+}
+
 const promptAlpha=new Map();
 function person(x,color){block(x-5,106,10,10,'#be9373');block(x-4,103,9,4,'#49372d');block(x-6,116,12,19,color);block(x-5,135,4,8,'#514039');block(x+2,135,4,8,'#514039')}
 
@@ -313,6 +345,7 @@ function draw(){
   block(144,108+jump,14,29,'#76583e');block(146,100+jump,10,10,'#b18a67');
  }
  drawForeground();
+ drawDateRuler();
  // On-canvas 8-bit text window like a classic adventure game.
  if(screen==='encounter'){
   block(5,76,310,99,'#262c34');block(8,79,304,93,'#444d57');
